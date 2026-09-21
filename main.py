@@ -6284,5 +6284,871 @@ def run():
     )
 
 
+
+# ============================================================
+# GLOBAL LANGUAGE + HOW-IT-WORKS SETTINGS
+# ============================================================
+
+SUPPORTED_LANGUAGES = {
+    "en": "🇬🇧 English",
+    "ru": "🇷🇺 Русский",
+    "uk": "🇺🇦 Українська",
+    "kk": "🇰🇿 Қазақша",
+}
+
+LANGUAGE_NAMES = {
+    "en": "English",
+    "ru": "Русский",
+    "uk": "Українська",
+    "kk": "Қазақша",
+}
+
+# These are built-in translations. Existing English/custom text is preserved
+# in the localized database tables, while switching languages selects the
+# corresponding pack without destroying the owner's customizations.
+TRANSLATED_TEXTS = {
+    "en": {
+        "welcome": "🛍️ <b>{shop_name}</b>\n\nWelcome! Choose an option below to get started.",
+        "category": "🗂️ <b>WHAT ARE YOU EXCHANGING?</b>\n\nChoose what you want to exchange.",
+        "currency": "🎯 <b>WHAT ARE YOU EXCHANGING FOR?</b>\n\nChoose what you want in return.",
+        "product": "📦 <b>CHOOSE THE EXCHANGE</b>\n\nChoose the amount you want to exchange.",
+        "custom": "✏️ <b>CUSTOM AMOUNT</b>\n\nSend the amount of Robux you want.\n\nExample: <code>2500</code>",
+        "username": "👤 <b>ROBLOX USERNAME</b>\n\nSend your Roblox username.",
+        "how": "ℹ️ <b>HOW IT WORKS</b>\n\n1️⃣ Choose what you are exchanging.\n2️⃣ Choose what you are exchanging for.\n3️⃣ Choose an amount.\n4️⃣ Send your Roblox username.\n5️⃣ Your exchange is sent and awaits confirmation.\n\n🤝 P2P offers use a separate market.",
+        "confirmation": "✅ <b>ORDER SENT</b>\n\n🔐 Order code: <code>{order_number}</code>\n\nYour order has been sent and is now <b>awaiting confirmation</b>.\n\nFor your security, only trust a message that references this exact order code.\n\n<b>{shop_name}</b> will contact you here when your order is confirmed.",
+        "cancelled": "❌ <b>CANCELLED</b>\n\nYour current action has been cancelled.",
+        "no_categories": "🗂️ <b>NO CATEGORIES AVAILABLE</b>\n\nThere are currently no exchange categories available.",
+        "no_products": "📦 <b>NO PRODUCTS AVAILABLE</b>\n\nThere are currently no products in this category.",
+        "invalid_amount": "⚠️ Please enter a valid amount between 1 and {max_custom_amount}.",
+        "invalid_username": "⚠️ That doesn't look like a valid Roblox username.\n\nPlease try again.",
+        "order_error": "⚠️ <b>ORDER NOT CREATED</b>\n\nSomething went wrong while creating your order. Please try again.",
+        "no_session": "Please open the shop again with /start.",
+        "p2p_market": "🤝 <b>P2P MARKET</b>\n\nBuy an existing offer or publish your own.\n\nSeller identities are hidden from buyers.",
+        "p2p_offer_amount": "💰 <b>OFFER AMOUNT</b>\n\nSend the amount you are offering.\nExample: <code>2500</code>",
+        "p2p_offer_target": "🎯 <b>WHAT DO YOU WANT IN RETURN?</b>\n\nChoose what you want from the buyer.",
+        "p2p_offer_target_amount": "💵 <b>REQUESTED AMOUNT</b>\n\nSend how much you want in return.\nExample: <code>250</code>",
+        "p2p_preview": "🔎 <b>CHECK OFFER</b>\n\nOffering: <b>{source_amount:,} {product}</b>\nWants: <b>{target_amount} {target_name}</b>\nFee: <b>{fee_amount} {target_name}</b>\nBuyer total: <b>{buyer_total} {target_name}</b>\n\nThe fee is added to the buyer total.",
+        "p2p_published": "✅ <b>OFFER PUBLISHED</b>\n\nOffer: <code>{offer_number}</code>\n\nYour offer is live. Your identity is hidden from buyers.",
+        "p2p_empty": "🤝 <b>P2P MARKET</b>\n\nThere are no active offers right now.",
+        "p2p_details": "🤝 <b>P2P OFFER</b>\n\nOffer: <code>{offer_number}</code>\nOffering: <b>{source_amount:,} {product}</b>\nWants: <b>{target_amount} {target_name}</b>\nFee: <b>{fee_amount} {target_name}</b>\nBuyer total: <b>{buyer_total} {target_name}</b>\n\nSeller identity is hidden.",
+        "p2p_buy_confirm": "🛒 <b>BUY THIS OFFER?</b>\n\nOffering: <b>{source_amount:,} {product}</b>\nYou exchange: <b>{buyer_total} {target_name}</b>\n\nSeller identity stays hidden.",
+        "p2p_bought": "✅ <b>P2P ORDER SENT</b>\n\nTrade: <code>{trade_number}</code>\n\nYour purchase request was sent and is awaiting confirmation.",
+        "p2p_seller_notice": "🔔 <b>P2P OFFER SELECTED</b>\n\nOffer: <code>{offer_number}</code>\nTrade: <code>{trade_number}</code>\n\nA buyer selected your offer. Please wait for confirmation.",
+        "p2p_my_offers": "📋 <b>MY P2P OFFERS</b>\n\nYour offers are shown below.",
+        "p2p_cancelled": "✅ <b>OFFER CANCELLED</b>\n\nThe offer is no longer available.",
+        "admin_new_order": "🔔 <b>NEW ORDER</b>\n\n🔐 Security code: <code>{order_number}</code>\n📦 Category: <b>{category}</b>\n🎯 Exchange target: <b>{currency}</b>\n📦 Product: <b>{product}</b>\n💰 Amount: <b>{amount:,} Robux</b>\n💵 Price: <b>{price}</b>\n👤 Roblox username: <code>{roblox_username}</code>\n📅 Created: <b>{created_at}</b>\n⏳ Status: <b>Awaiting confirmation</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Customer: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
+        "admin_no_recipient": "⚠️ <b>ORDER SAVED — ADMIN NOTIFIED FAILED</b>\n\nOrder <code>{order_number}</code> is stored, but the configured admin chat could not be reached.\n\nReason: <code>{error}</code>",
+    },
+    "ru": {
+        "welcome": "🛍️ <b>{shop_name}</b>\n\nДобро пожаловать! Выберите действие ниже.",
+        "category": "🗂️ <b>ЧТО ВЫ ОБМЕНИВАЕТЕ?</b>\n\nВыберите, что хотите обменять.",
+        "currency": "🎯 <b>НА ЧТО ВЫ ОБМЕНИВАЕТЕ?</b>\n\nВыберите, что хотите получить взамен.",
+        "product": "📦 <b>ВЫБЕРИТЕ ОБМЕН</b>\n\nВыберите количество для обмена.",
+        "custom": "✏️ <b>СВОЁ КОЛИЧЕСТВО</b>\n\nОтправьте нужное количество Robux.\n\nПример: <code>2500</code>",
+        "username": "👤 <b>ИМЯ ПОЛЬЗОВАТЕЛЯ ROBLOX</b>\n\nОтправьте свой Roblox username.",
+        "how": "ℹ️ <b>КАК ЭТО РАБОТАЕТ</b>\n\n1️⃣ Выберите, что отдаёте.\n2️⃣ Выберите, что хотите получить.\n3️⃣ Выберите количество.\n4️⃣ Отправьте Roblox username.\n5️⃣ Обмен будет отправлен и будет ожидать подтверждения.\n\n🤝 Для P2P используется отдельный маркет.",
+        "confirmation": "✅ <b>ЗАКАЗ ОТПРАВЛЕН</b>\n\n🔐 Код заказа: <code>{order_number}</code>\n\nВаш заказ отправлен и сейчас <b>ожидает подтверждения</b>.\n\nДля безопасности доверяйте только сообщениям с этим точным кодом.\n\n<b>{shop_name}</b> свяжется с вами здесь после подтверждения заказа.",
+        "cancelled": "❌ <b>ОТМЕНЕНО</b>\n\nТекущее действие отменено.",
+        "no_categories": "🗂️ <b>КАТЕГОРИЙ НЕТ</b>\n\nСейчас нет доступных категорий обмена.",
+        "no_products": "📦 <b>ТОВАРОВ НЕТ</b>\n\nВ этой категории сейчас нет доступных вариантов.",
+        "invalid_amount": "⚠️ Введите корректное количество от 1 до {max_custom_amount}.",
+        "invalid_username": "⚠️ Похоже, это неверный Roblox username.\n\nПопробуйте ещё раз.",
+        "order_error": "⚠️ <b>ЗАКАЗ НЕ СОЗДАН</b>\n\nПроизошла ошибка при создании заказа. Попробуйте ещё раз.",
+        "no_session": "Откройте магазин снова через /start.",
+        "p2p_market": "🤝 <b>P2P МАРКЕТ</b>\n\nКупите готовое предложение или опубликуйте своё.\n\nЛичность продавца скрыта от покупателей.",
+        "p2p_offer_amount": "💰 <b>КОЛИЧЕСТВО ПРЕДЛОЖЕНИЯ</b>\n\nОтправьте количество, которое вы предлагаете.\nПример: <code>2500</code>",
+        "p2p_offer_target": "🎯 <b>ЧТО ВЫ ХОТИТЕ ВЗАМЕН?</b>\n\nВыберите, что хотите получить от покупателя.",
+        "p2p_offer_target_amount": "💵 <b>ЗАПРАШИВАЕМОЕ КОЛИЧЕСТВО</b>\n\nОтправьте, сколько хотите получить взамен.\nПример: <code>250</code>",
+        "p2p_preview": "🔎 <b>ПРОВЕРКА ПРЕДЛОЖЕНИЯ</b>\n\nПредлагаете: <b>{source_amount:,} {product}</b>\nХотите: <b>{target_amount} {target_name}</b>\nКомиссия: <b>{fee_amount} {target_name}</b>\nИтого для покупателя: <b>{buyer_total} {target_name}</b>\n\nКомиссия добавляется к сумме покупателя.",
+        "p2p_published": "✅ <b>ПРЕДЛОЖЕНИЕ ОПУБЛИКОВАНО</b>\n\nПредложение: <code>{offer_number}</code>\n\nВаше предложение опубликовано. Ваша личность скрыта от покупателей.",
+        "p2p_empty": "🤝 <b>P2P МАРКЕТ</b>\n\nСейчас нет активных предложений.",
+        "p2p_details": "🤝 <b>P2P ПРЕДЛОЖЕНИЕ</b>\n\nПредложение: <code>{offer_number}</code>\nПредлагается: <b>{source_amount:,} {product}</b>\nЗапрашивается: <b>{target_amount} {target_name}</b>\nКомиссия: <b>{fee_amount} {target_name}</b>\nИтого для покупателя: <b>{buyer_total} {target_name}</b>\n\nЛичность продавца скрыта.",
+        "p2p_buy_confirm": "🛒 <b>КУПИТЬ ЭТО ПРЕДЛОЖЕНИЕ?</b>\n\nПредлагается: <b>{source_amount:,} {product}</b>\nВы отдаёте: <b>{buyer_total} {target_name}</b>\n\nЛичность продавца скрыта.",
+        "p2p_bought": "✅ <b>P2P ЗАКАЗ ОТПРАВЛЕН</b>\n\nСделка: <code>{trade_number}</code>\n\nЗапрос на покупку отправлен и ожидает подтверждения.",
+        "p2p_seller_notice": "🔔 <b>P2P ПРЕДЛОЖЕНИЕ ВЫБРАНО</b>\n\nПредложение: <code>{offer_number}</code>\nСделка: <code>{trade_number}</code>\n\nПокупатель выбрал ваше предложение. Ожидайте подтверждения.",
+        "p2p_my_offers": "📋 <b>МОИ P2P ПРЕДЛОЖЕНИЯ</b>\n\nВаши предложения показаны ниже.",
+        "p2p_cancelled": "✅ <b>ПРЕДЛОЖЕНИЕ ОТМЕНЕНО</b>\n\nПредложение больше недоступно.",
+        "admin_new_order": "🔔 <b>НОВЫЙ ЗАКАЗ</b>\n\n🔐 Код: <code>{order_number}</code>\n📦 Категория: <b>{category}</b>\n🎯 Цель обмена: <b>{currency}</b>\n📦 Товар: <b>{product}</b>\n💰 Количество: <b>{amount:,} Robux</b>\n💵 Цена: <b>{price}</b>\n👤 Roblox username: <code>{roblox_username}</code>\n📅 Создан: <b>{created_at}</b>\n⏳ Статус: <b>Ожидает подтверждения</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Клиент: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
+        "admin_no_recipient": "⚠️ <b>ЗАКАЗ СОХРАНЁН — АДМИНИСТРАТОР НЕ УВЕДОМЛЁН</b>\n\nЗаказ <code>{order_number}</code> сохранён, но чат администратора недоступен.\n\nПричина: <code>{error}</code>",
+    },
+    "uk": {
+        "welcome": "🛍️ <b>{shop_name}</b>\n\nЛаскаво просимо! Оберіть дію нижче.",
+        "category": "🗂️ <b>ЩО ВИ ОБМІНЮЄТЕ?</b>\n\nОберіть, що хочете обміняти.",
+        "currency": "🎯 <b>НА ЩО ВИ ОБМІНЮЄТЕ?</b>\n\nОберіть, що хочете отримати натомість.",
+        "product": "📦 <b>ОБЕРІТЬ ОБМІН</b>\n\nОберіть кількість для обміну.",
+        "custom": "✏️ <b>ВЛАСНА КІЛЬКІСТЬ</b>\n\nНадішліть потрібну кількість Robux.\n\nПриклад: <code>2500</code>",
+        "username": "👤 <b>ІМ'Я КОРИСТУВАЧА ROBLOX</b>\n\nНадішліть свій Roblox username.",
+        "how": "ℹ️ <b>ЯК ЦЕ ПРАЦЮЄ</b>\n\n1️⃣ Оберіть, що віддаєте.\n2️⃣ Оберіть, що хочете отримати.\n3️⃣ Оберіть кількість.\n4️⃣ Надішліть Roblox username.\n5️⃣ Обмін буде відправлено та він чекатиме підтвердження.\n\n🤝 Для P2P використовується окремий маркет.",
+        "confirmation": "✅ <b>ЗАМОВЛЕННЯ НАДІСЛАНО</b>\n\n🔐 Код замовлення: <code>{order_number}</code>\n\nВаше замовлення надіслано і зараз <b>очікує підтвердження</b>.\n\nДля безпеки довіряйте лише повідомленням із цим точним кодом.\n\n<b>{shop_name}</b> зв'яжеться з вами після підтвердження замовлення.",
+        "cancelled": "❌ <b>СКАСОВАНО</b>\n\nПоточну дію скасовано.",
+        "no_categories": "🗂️ <b>КАТЕГОРІЙ НЕМАЄ</b>\n\nЗараз немає доступних категорій обміну.",
+        "no_products": "📦 <b>ТОВАРІВ НЕМАЄ</b>\n\nУ цій категорії зараз немає доступних варіантів.",
+        "invalid_amount": "⚠️ Введіть коректну кількість від 1 до {max_custom_amount}.",
+        "invalid_username": "⚠️ Схоже, це неправильний Roblox username.\n\nСпробуйте ще раз.",
+        "order_error": "⚠️ <b>ЗАМОВЛЕННЯ НЕ СТВОРЕНО</b>\n\nПід час створення сталася помилка. Спробуйте ще раз.",
+        "no_session": "Відкрийте магазин знову через /start.",
+        "p2p_market": "🤝 <b>P2P МАРКЕТ</b>\n\nКупіть готову пропозицію або опублікуйте свою.\n\nОсобу продавця приховано від покупців.",
+        "p2p_offer_amount": "💰 <b>КІЛЬКІСТЬ ПРОПОЗИЦІЇ</b>\n\nНадішліть кількість, яку ви пропонуєте.\nПриклад: <code>2500</code>",
+        "p2p_offer_target": "🎯 <b>ЩО ВИ ХОЧЕТЕ ВЗАМІН?</b>\n\nОберіть, що хочете отримати від покупця.",
+        "p2p_offer_target_amount": "💵 <b>ЗАПИТУВАНА КІЛЬКІСТЬ</b>\n\nНадішліть, скільки хочете отримати натомість.\nПриклад: <code>250</code>",
+        "p2p_preview": "🔎 <b>ПЕРЕВІРКА ПРОПОЗИЦІЇ</b>\n\nПропонуєте: <b>{source_amount:,} {product}</b>\nХочете: <b>{target_amount} {target_name}</b>\nКомісія: <b>{fee_amount} {target_name}</b>\nРазом для покупця: <b>{buyer_total} {target_name}</b>\n\nКомісія додається до суми покупця.",
+        "p2p_published": "✅ <b>ПРОПОЗИЦІЮ ОПУБЛІКОВАНО</b>\n\nПропозиція: <code>{offer_number}</code>\n\nВашу пропозицію опубліковано. Вашу особу приховано від покупців.",
+        "p2p_empty": "🤝 <b>P2P МАРКЕТ</b>\n\nЗараз немає активних пропозицій.",
+        "p2p_details": "🤝 <b>P2P ПРОПОЗИЦІЯ</b>\n\nПропозиція: <code>{offer_number}</code>\nПропонується: <b>{source_amount:,} {product}</b>\nЗапитується: <b>{target_amount} {target_name}</b>\nКомісія: <b>{fee_amount} {target_name}</b>\nРазом для покупця: <b>{buyer_total} {target_name}</b>\n\nОсобу продавця приховано.",
+        "p2p_buy_confirm": "🛒 <b>КУПИТИ ЦЮ ПРОПОЗИЦІЮ?</b>\n\nПропонується: <b>{source_amount:,} {product}</b>\nВи віддаєте: <b>{buyer_total} {target_name}</b>\n\nОсобу продавця приховано.",
+        "p2p_bought": "✅ <b>P2P ЗАМОВЛЕННЯ НАДІСЛАНО</b>\n\nУгода: <code>{trade_number}</code>\n\nЗапит на купівлю надіслано та він очікує підтвердження.",
+        "p2p_seller_notice": "🔔 <b>P2P ПРОПОЗИЦІЮ ОБРАНО</b>\n\nПропозиція: <code>{offer_number}</code>\nУгода: <code>{trade_number}</code>\n\nПокупець обрав вашу пропозицію. Очікуйте підтвердження.",
+        "p2p_my_offers": "📋 <b>МОЇ P2P ПРОПОЗИЦІЇ</b>\n\nВаші пропозиції показано нижче.",
+        "p2p_cancelled": "✅ <b>ПРОПОЗИЦІЮ СКАСОВАНО</b>\n\nПропозиція більше недоступна.",
+        "admin_new_order": "🔔 <b>НОВЕ ЗАМОВЛЕННЯ</b>\n\n🔐 Код: <code>{order_number}</code>\n📦 Категорія: <b>{category}</b>\n🎯 Ціль обміну: <b>{currency}</b>\n📦 Товар: <b>{product}</b>\n💰 Кількість: <b>{amount:,} Robux</b>\n💵 Ціна: <b>{price}</b>\n👤 Roblox username: <code>{roblox_username}</code>\n📅 Створено: <b>{created_at}</b>\n⏳ Статус: <b>Очікує підтвердження</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Клієнт: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
+        "admin_no_recipient": "⚠️ <b>ЗАМОВЛЕННЯ ЗБЕРЕЖЕНО — АДМІНІСТРАТОРА НЕ ПОВІДОМЛЕНО</b>\n\nЗамовлення <code>{order_number}</code> збережено, але чат адміністратора недоступний.\n\nПричина: <code>{error}</code>",
+    },
+    "kk": {
+        "welcome": "🛍️ <b>{shop_name}</b>\n\nҚош келдіңіз! Төменнен әрекетті таңдаңыз.",
+        "category": "🗂️ <b>НЕНІ АЙЫРБАСТАЙСЫЗ?</b>\n\nАйырбастағыңыз келетін нәрсені таңдаңыз.",
+        "currency": "🎯 <b>НЕГЕ АЙЫРБАСТАЙСЫЗ?</b>\n\nОрнына алғыңыз келетін нәрсені таңдаңыз.",
+        "product": "📦 <b>АЙЫРБАС НҰСҚАСЫН ТАҢДАҢЫЗ</b>\n\nАйырбастайтын мөлшерді таңдаңыз.",
+        "custom": "✏️ <b>ЖЕКЕ МӨЛШЕР</b>\n\nҚалаған Robux мөлшерін жіберіңіз.\n\nМысал: <code>2500</code>",
+        "username": "👤 <b>ROBLOX ПАЙДАЛАНУШЫ АТЫ</b>\n\nRoblox username-іңізді жіберіңіз.",
+        "how": "ℹ️ <b>ҚАЛАЙ ЖҰМЫС ІСТЕЙДІ</b>\n\n1️⃣ Нені беретіндігіңізді таңдаңыз.\n2️⃣ Не алғыңыз келетінін таңдаңыз.\n3️⃣ Мөлшерді таңдаңыз.\n4️⃣ Roblox username жіберіңіз.\n5️⃣ Айырбас жіберіліп, растауды күтеді.\n\n🤝 P2P үшін бөлек маркет қолданылады.",
+        "confirmation": "✅ <b>ТАПСЫРЫС ЖІБЕРІЛДІ</b>\n\n🔐 Тапсырыс коды: <code>{order_number}</code>\n\nТапсырысыңыз жіберілді және қазір <b>растауды күтуде</b>.\n\nҚауіпсіздік үшін тек осы дәл код көрсетілген хабарламаға сеніңіз.\n\n<b>{shop_name}</b> тапсырыс расталғаннан кейін сізбен осы жерде байланысады.",
+        "cancelled": "❌ <b>БОЛДЫРЫЛДЫ</b>\n\nАғымдағы әрекет тоқтатылды.",
+        "no_categories": "🗂️ <b>САНАТТАР ЖОҚ</b>\n\nҚазір айырбас санаттары қолжетімсіз.",
+        "no_products": "📦 <b>ӨНІМДЕР ЖОҚ</b>\n\nБұл санатта қазір қолжетімді нұсқалар жоқ.",
+        "invalid_amount": "⚠️ 1 мен {max_custom_amount} аралығында дұрыс мөлшер енгізіңіз.",
+        "invalid_username": "⚠️ Бұл Roblox username дұрыс емес сияқты.\n\nҚайта көріңіз.",
+        "order_error": "⚠️ <b>ТАПСЫРЫС ҚҰРЫЛМАДЫ</b>\n\nТапсырысты жасау кезінде қате болды. Қайта көріңіз.",
+        "no_session": "Дүкенді /start арқылы қайта ашыңыз.",
+        "p2p_market": "🤝 <b>P2P МАРКЕТ</b>\n\nДайын ұсынысты сатып алыңыз немесе өз ұсынысыңызды жариялаңыз.\n\nСатушының кім екені сатып алушыдан жасырылған.",
+        "p2p_offer_amount": "💰 <b>ҰСЫНЫС МӨЛШЕРІ</b>\n\nҰсынатын мөлшеріңізді жіберіңіз.\nМысал: <code>2500</code>",
+        "p2p_offer_target": "🎯 <b>ОРНЫНА НЕ ҚАЛАЙСЫЗ?</b>\n\nСатып алушыдан не алғыңыз келетінін таңдаңыз.",
+        "p2p_offer_target_amount": "💵 <b>СҰРАЛАТЫН МӨЛШЕР</b>\n\nОрнына қанша алғыңыз келетінін жіберіңіз.\nМысал: <code>250</code>",
+        "p2p_preview": "🔎 <b>ҰСЫНЫСТЫ ТЕКСЕРУ</b>\n\nҰсынасыз: <b>{source_amount:,} {product}</b>\nҚалайсыз: <b>{target_amount} {target_name}</b>\nКомиссия: <b>{fee_amount} {target_name}</b>\nСатып алушы барлығы: <b>{buyer_total} {target_name}</b>\n\nКомиссия сатып алушының жалпы сомасына қосылады.",
+        "p2p_published": "✅ <b>ҰСЫНЫС ЖАРИЯЛАНДЫ</b>\n\nҰсыныс: <code>{offer_number}</code>\n\nҰсынысыңыз жарияланды. Сіздің жеке деректеріңіз сатып алушылардан жасырылған.",
+        "p2p_empty": "🤝 <b>P2P МАРКЕТ</b>\n\nҚазір белсенді ұсыныстар жоқ.",
+        "p2p_details": "🤝 <b>P2P ҰСЫНЫСЫ</b>\n\nҰсыныс: <code>{offer_number}</code>\nҰсынылады: <b>{source_amount:,} {product}</b>\nСұралады: <b>{target_amount} {target_name}</b>\nКомиссия: <b>{fee_amount} {target_name}</b>\nСатып алушы барлығы: <b>{buyer_total} {target_name}</b>\n\nСатушының кім екені жасырылған.",
+        "p2p_buy_confirm": "🛒 <b>ОСЫ ҰСЫНЫСТЫ САТЫП АЛУ КЕРЕК ПЕ?</b>\n\nҰсынылады: <b>{source_amount:,} {product}</b>\nСіз бересіз: <b>{buyer_total} {target_name}</b>\n\nСатушының кім екені жасырылған.",
+        "p2p_bought": "✅ <b>P2P ТАПСЫРЫСЫ ЖІБЕРІЛДІ</b>\n\nМәміле: <code>{trade_number}</code>\n\nСатып алу сұрауы жіберілді және растауды күтуде.",
+        "p2p_seller_notice": "🔔 <b>P2P ҰСЫНЫС ТАҢДАЛДЫ</b>\n\nҰсыныс: <code>{offer_number}</code>\nМәміле: <code>{trade_number}</code>\n\nСатып алушы сіздің ұсынысыңызды таңдады. Растауды күтіңіз.",
+        "p2p_my_offers": "📋 <b>МЕНІҢ P2P ҰСЫНЫСТАРЫМ</b>\n\nҰсыныстарыңыз төменде көрсетілген.",
+        "p2p_cancelled": "✅ <b>ҰСЫНЫС БОЛДЫРЫЛДЫ</b>\n\nҰсыныс енді қолжетімсіз.",
+        "admin_new_order": "🔔 <b>ЖАҢА ТАПСЫРЫС</b>\n\n🔐 Код: <code>{order_number}</code>\n📦 Санат: <b>{category}</b>\n🎯 Айырбас мақсаты: <b>{currency}</b>\n📦 Өнім: <b>{product}</b>\n💰 Мөлшер: <b>{amount:,} Robux</b>\n💵 Баға: <b>{price}</b>\n👤 Roblox username: <code>{roblox_username}</code>\n📅 Құрылған: <b>{created_at}</b>\n⏳ Күйі: <b>Растауды күтуде</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Клиент: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
+        "admin_no_recipient": "⚠️ <b>ТАПСЫРЫС САҚТАЛДЫ — ӘКІМШІГЕ ХАБАРЛАНБАДЫ</b>\n\n<code>{order_number}</code> тапсырысы сақталды, бірақ әкімші чатына жету мүмкін болмады.\n\nСебебі: <code>{error}</code>",
+    },
+}
+
+TRANSLATED_BUTTONS = {
+    "en": {
+        "exchange": "🔄 Exchange", "how": "ℹ️ How It Works", "custom": "✏️ Custom Amount",
+        "back": "↩️ Back", "home": "🏠 Main Menu", "new_order": "🔄 New Exchange", "cancel": "❌ Cancel",
+        "categories": "🗂️ Categories", "p2p_market": "🤝 P2P Market", "p2p_browse": "🔎 Browse Offers",
+        "p2p_publish": "➕ Publish Offer", "p2p_my_offers": "📋 My Offers", "p2p_buy": "🛒 Buy Offer", "p2p_confirm": "✅ Confirm Purchase",
+    },
+    "ru": {
+        "exchange": "🔄 Обмен", "how": "ℹ️ Как это работает", "custom": "✏️ Своё количество",
+        "back": "↩️ Назад", "home": "🏠 Главное меню", "new_order": "🔄 Новый обмен", "cancel": "❌ Отмена",
+        "categories": "🗂️ Категории", "p2p_market": "🤝 P2P Маркет", "p2p_browse": "🔎 Смотреть предложения",
+        "p2p_publish": "➕ Опубликовать предложение", "p2p_my_offers": "📋 Мои предложения", "p2p_buy": "🛒 Купить предложение", "p2p_confirm": "✅ Подтвердить покупку",
+    },
+    "uk": {
+        "exchange": "🔄 Обмін", "how": "ℹ️ Як це працює", "custom": "✏️ Власна кількість",
+        "back": "↩️ Назад", "home": "🏠 Головне меню", "new_order": "🔄 Новий обмін", "cancel": "❌ Скасувати",
+        "categories": "🗂️ Категорії", "p2p_market": "🤝 P2P Маркет", "p2p_browse": "🔎 Переглянути пропозиції",
+        "p2p_publish": "➕ Опублікувати пропозицію", "p2p_my_offers": "📋 Мої пропозиції", "p2p_buy": "🛒 Купити пропозицію", "p2p_confirm": "✅ Підтвердити купівлю",
+    },
+    "kk": {
+        "exchange": "🔄 Айырбас", "how": "ℹ️ Қалай жұмыс істейді", "custom": "✏️ Жеке мөлшер",
+        "back": "↩️ Артқа", "home": "🏠 Басты мәзір", "new_order": "🔄 Жаңа айырбас", "cancel": "❌ Болдырмау",
+        "categories": "🗂️ Санаттар", "p2p_market": "🤝 P2P Маркет", "p2p_browse": "🔎 Ұсыныстарды көру",
+        "p2p_publish": "➕ Ұсыныс жариялау", "p2p_my_offers": "📋 Менің ұсыныстарым", "p2p_buy": "🛒 Ұсынысты сатып алу", "p2p_confirm": "✅ Сатып алуды растау",
+    },
+}
+
+UI = {
+    "en": {
+        "admin_panel": "⚙️ <b>ADMIN PANEL</b>\n\nManage the shop directly from Telegram.",
+        "products": "📦 Products", "categories": "🗂️ Categories", "targets": "💱 Exchange Targets", "prices": "💰 Prices",
+        "p2p": "🤝 P2P Market", "texts": "📝 Texts / Steps", "buttons": "🔘 Buttons", "settings": "🏪 Shop Settings",
+        "admins": "👮 Admins", "orders": "📋 Orders", "preview": "🏠 Shop Preview", "language": "🌐 Language",
+        "language_title": "🌐 <b>BOT LANGUAGE</b>\n\nChoose the language used by the bot.",
+        "language_saved": "✅ <b>LANGUAGE UPDATED</b>\n\nThe bot is now using <b>{language}</b>.",
+        "settings_title": "🏪 <b>SHOP SETTINGS</b>",
+        "support_username": "👤 Support username", "recipient": "🆔 Order recipient", "max_amount": "🔢 Custom amount limit", "cleanup": "🧹 Delete user messages",
+        "show_how": "ℹ️ How It Works", "shown": "✅ Shown", "hidden": "🚫 Hidden", "toggle_how": "Toggle visibility",
+        "texts_title": "📝 <b>TEXTS / STEPS</b>\n\nCustomer and P2P messages can be edited here.",
+        "buttons_title": "🔘 <b>BUTTON EDITOR</b>\n\nRename customer buttons without editing code.",
+        "back_admin": "↩️ Admin Panel",
+        "yes": "Yes", "no": "No", "access_denied": "⛔ Access denied.",
+        "how_disabled": "How It Works is currently hidden.",
+    },
+    "ru": {
+        "admin_panel": "⚙️ <b>ПАНЕЛЬ АДМИНИСТРАТОРА</b>\n\nУправляйте магазином прямо из Telegram.",
+        "products": "📦 Товары", "categories": "🗂️ Категории", "targets": "💱 Цели обмена", "prices": "💰 Цены",
+        "p2p": "🤝 P2P Маркет", "texts": "📝 Тексты / шаги", "buttons": "🔘 Кнопки", "settings": "🏪 Настройки магазина",
+        "admins": "👮 Администраторы", "orders": "📋 Заказы", "preview": "🏠 Просмотр магазина", "language": "🌐 Язык",
+        "language_title": "🌐 <b>ЯЗЫК БОТА</b>\n\nВыберите язык, который будет использовать бот.",
+        "language_saved": "✅ <b>ЯЗЫК ОБНОВЛЁН</b>\n\nТеперь бот использует <b>{language}</b>.",
+        "settings_title": "🏪 <b>НАСТРОЙКИ МАГАЗИНА</b>",
+        "support_username": "👤 Username поддержки", "recipient": "🆔 Получатель заказов", "max_amount": "🔢 Лимит своего количества", "cleanup": "🧹 Удалять сообщения пользователей",
+        "show_how": "ℹ️ Как это работает", "shown": "✅ Показано", "hidden": "🚫 Скрыто", "toggle_how": "Изменить видимость",
+        "texts_title": "📝 <b>ТЕКСТЫ / ШАГИ</b>\n\nЗдесь можно менять сообщения клиентов и P2P.",
+        "buttons_title": "🔘 <b>РЕДАКТОР КНОПОК</b>\n\nПереименовывайте кнопки без изменения кода.",
+        "back_admin": "↩️ Панель администратора",
+        "yes": "Да", "no": "Нет", "access_denied": "⛔ Доступ запрещён.",
+        "how_disabled": "Раздел «Как это работает» сейчас скрыт.",
+    },
+    "uk": {
+        "admin_panel": "⚙️ <b>ПАНЕЛЬ АДМІНІСТРАТОРА</b>\n\nКеруйте магазином прямо з Telegram.",
+        "products": "📦 Товари", "categories": "🗂️ Категорії", "targets": "💱 Цілі обміну", "prices": "💰 Ціни",
+        "p2p": "🤝 P2P Маркет", "texts": "📝 Тексти / кроки", "buttons": "🔘 Кнопки", "settings": "🏪 Налаштування магазину",
+        "admins": "👮 Адміністратори", "orders": "📋 Замовлення", "preview": "🏠 Перегляд магазину", "language": "🌐 Мова",
+        "language_title": "🌐 <b>МОВА БОТА</b>\n\nОберіть мову, яку використовуватиме бот.",
+        "language_saved": "✅ <b>МОВУ ОНОВЛЕНО</b>\n\nТепер бот використовує <b>{language}</b>.",
+        "settings_title": "🏪 <b>НАЛАШТУВАННЯ МАГАЗИНУ</b>",
+        "support_username": "👤 Username підтримки", "recipient": "🆔 Отримувач замовлень", "max_amount": "🔢 Ліміт власної кількості", "cleanup": "🧹 Видаляти повідомлення користувачів",
+        "show_how": "ℹ️ Як це працює", "shown": "✅ Показано", "hidden": "🚫 Приховано", "toggle_how": "Змінити видимість",
+        "texts_title": "📝 <b>ТЕКСТИ / КРОКИ</b>\n\nТут можна змінювати повідомлення клієнтів і P2P.",
+        "buttons_title": "🔘 <b>РЕДАКТОР КНОПОК</b>\n\nПерейменовуйте кнопки без зміни коду.",
+        "back_admin": "↩️ Панель адміністратора",
+        "yes": "Так", "no": "Ні", "access_denied": "⛔ Доступ заборонено.",
+        "how_disabled": "Розділ «Як це працює» зараз приховано.",
+    },
+    "kk": {
+        "admin_panel": "⚙️ <b>ӘКІМШІ ПАНЕЛІ</b>\n\nДүкенді тікелей Telegram арқылы басқарыңыз.",
+        "products": "📦 Өнімдер", "categories": "🗂️ Санаттар", "targets": "💱 Айырбас мақсаттары", "prices": "💰 Бағалар",
+        "p2p": "🤝 P2P Маркет", "texts": "📝 Мәтіндер / қадамдар", "buttons": "🔘 Батырмалар", "settings": "🏪 Дүкен баптаулары",
+        "admins": "👮 Әкімшілер", "orders": "📋 Тапсырыстар", "preview": "🏠 Дүкенді көру", "language": "🌐 Тіл",
+        "language_title": "🌐 <b>БОТ ТІЛІ</b>\n\nБот қолданатын тілді таңдаңыз.",
+        "language_saved": "✅ <b>ТІЛ ЖАҢАРТЫЛДЫ</b>\n\nЕнді бот <b>{language}</b> тілін қолданады.",
+        "settings_title": "🏪 <b>ДҮКЕН БАПТАУЛАРЫ</b>",
+        "support_username": "👤 Қолдау username-і", "recipient": "🆔 Тапсырыс алушысы", "max_amount": "🔢 Жеке мөлшер лимиті", "cleanup": "🧹 Пайдаланушы хабарламаларын өшіру",
+        "show_how": "ℹ️ Қалай жұмыс істейді", "shown": "✅ Көрсетіледі", "hidden": "🚫 Жасырылған", "toggle_how": "Көрсетілуін өзгерту",
+        "texts_title": "📝 <b>МӘТІНДЕР / ҚАДАМДАР</b>\n\nКлиент және P2P хабарламаларын осы жерден өзгертіңіз.",
+        "buttons_title": "🔘 <b>БАТЫРМА РЕДАКТОРЫ</b>\n\nКодты өзгертпей батырма атауларын өзгертіңіз.",
+        "back_admin": "↩️ Әкімші панелі",
+        "yes": "Иә", "no": "Жоқ", "access_denied": "⛔ Қол жеткізуге тыйым салынған.",
+        "how_disabled": "«Қалай жұмыс істейді» бөлімі қазір жасырылған.",
+    },
+}
+
+
+def current_language():
+    lang = get_setting("bot_language", "en")
+    return lang if lang in SUPPORTED_LANGUAGES else "en"
+
+
+def set_language(lang):
+    if lang not in SUPPORTED_LANGUAGES:
+        raise ValueError("Unsupported language")
+    set_setting("bot_language", lang)
+
+
+def ui(key, **kwargs):
+    lang = current_language()
+    text = UI.get(lang, UI["en"]).get(key, UI["en"].get(key, key))
+    try:
+        return text.format(**kwargs)
+    except (KeyError, ValueError, IndexError):
+        return text
+
+
+# Localized database access. Existing `texts` / `buttons` are preserved as
+# English/custom source data and copied once into the language-aware tables.
+def _ensure_localized_tables():
+    conn = db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS localized_texts (
+            language TEXT NOT NULL,
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            PRIMARY KEY(language, key)
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS localized_buttons (
+            language TEXT NOT NULL,
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            PRIMARY KEY(language, key)
+        )
+    """)
+
+    # Migrate the current DB values to English exactly once where absent.
+    rows = conn.execute("SELECT key, value FROM texts").fetchall()
+    for row in rows:
+        conn.execute(
+            "INSERT OR IGNORE INTO localized_texts(language,key,value) VALUES('en',?,?)",
+            (row["key"], row["value"]),
+        )
+
+    rows = conn.execute("SELECT key, value FROM buttons").fetchall()
+    for row in rows:
+        conn.execute(
+            "INSERT OR IGNORE INTO localized_buttons(language,key,value) VALUES('en',?,?)",
+            (row["key"], row["value"]),
+        )
+
+    # Add missing built-in translations without overwriting customized text.
+    for lang, pack in TRANSLATED_TEXTS.items():
+        for key, value in pack.items():
+            conn.execute(
+                "INSERT OR IGNORE INTO localized_texts(language,key,value) VALUES(?,?,?)",
+                (lang, key, value),
+            )
+    for lang, pack in TRANSLATED_BUTTONS.items():
+        for key, value in pack.items():
+            conn.execute(
+                "INSERT OR IGNORE INTO localized_buttons(language,key,value) VALUES(?,?,?)",
+                (lang, key, value),
+            )
+
+    conn.commit()
+    conn.close()
+
+
+def _localized_get(table, language, key):
+    conn = db()
+    row = conn.execute(
+        f"SELECT value FROM {table} WHERE language=? AND key=?",
+        (language, key),
+    ).fetchone()
+    if not row and language != "en":
+        row = conn.execute(
+            f"SELECT value FROM {table} WHERE language='en' AND key=?",
+            (key,),
+        ).fetchone()
+    conn.close()
+    return row["value"] if row else None
+
+
+def get_text(key, default=""):
+    value = _localized_get("localized_texts", current_language(), key)
+    return value if value is not None else default
+
+
+def set_text(key, value):
+    _ensure_localized_tables()
+    lang = current_language()
+    conn = db()
+    conn.execute(
+        "INSERT INTO localized_texts(language,key,value) VALUES(?,?,?) "
+        "ON CONFLICT(language,key) DO UPDATE SET value=excluded.value",
+        (lang, key, value),
+    )
+    # Keep the legacy table synchronized for English/admin backups.
+    if lang == "en":
+        conn.execute(
+            "INSERT INTO texts(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (key, value),
+        )
+    conn.commit()
+    conn.close()
+
+
+def get_button(key, default=None):
+    fallback = default if default is not None else key
+    value = _localized_get("localized_buttons", current_language(), key)
+    return value if value is not None else fallback
+
+
+def set_button(key, value):
+    _ensure_localized_tables()
+    lang = current_language()
+    conn = db()
+    conn.execute(
+        "INSERT INTO localized_buttons(language,key,value) VALUES(?,?,?) "
+        "ON CONFLICT(language,key) DO UPDATE SET value=excluded.value",
+        (lang, key, value),
+    )
+    if lang == "en":
+        conn.execute(
+            "INSERT INTO buttons(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (key, value),
+        )
+    conn.commit()
+    conn.close()
+
+
+_INIT_DB_BEFORE_LANGUAGE = init_db
+
+
+def init_db():
+    _INIT_DB_BEFORE_LANGUAGE()
+    conn = db()
+    conn.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('bot_language','en')")
+    conn.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('show_how','1')")
+    conn.commit()
+    conn.close()
+    _ensure_localized_tables()
+
+
+# ============================================================
+# CUSTOMER LANGUAGE-AWARE KEYBOARDS / SCREENS
+# ============================================================
+
+def main_keyboard():
+    rows = [[InlineKeyboardButton(get_button("exchange", "🔄 Exchange"), callback_data="exchange")],
+            [InlineKeyboardButton(get_button("p2p_market", "🤝 P2P Market"), callback_data="p2p_market")]]
+    if get_setting("show_how", "1") == "1":
+        rows.append([InlineKeyboardButton(get_button("how", "ℹ️ How It Works"), callback_data="how")])
+    return InlineKeyboardMarkup(rows)
+
+
+async def show_exchange(query):
+    sessions.pop(query.from_user.id, None)
+    await edit_screen(query, query.from_user.id, render_text("category"), exchange_categories_keyboard())
+
+
+async def show_how(query):
+    if get_setting("show_how", "1") != "1":
+        await edit_screen(query, query.from_user.id, render_text("welcome"), main_keyboard())
+        return
+    await edit_screen(
+        query,
+        query.from_user.id,
+        render_text("how"),
+        InlineKeyboardMarkup([
+            [InlineKeyboardButton(get_button("exchange", "🔄 Exchange"), callback_data="exchange")],
+            [InlineKeyboardButton(get_button("p2p_market", "🤝 P2P Market"), callback_data="p2p_market")],
+            [InlineKeyboardButton(get_button("home", "🏠 Main Menu"), callback_data="home")],
+        ]),
+    )
+
+
+async def show_category_customer(query, category_id, flow="classic"):
+    category = get_category(category_id)
+    if not category or not category["enabled"]:
+        await query.answer(
+            {"en":"This category is unavailable.","ru":"Эта категория недоступна.","uk":"Ця категорія недоступна.","kk":"Бұл санат қолжетімсіз."}.get(current_language(), "This category is unavailable."),
+            show_alert=True,
+        )
+        return
+
+    subs = get_subcategories(category_id, True)
+    session = session_for(query.from_user.id)
+    session.update({"category_id": category_id, "category_name": category["name"], "flow": flow})
+
+    if flow == "p2p":
+        p2p_products = [p for p in get_products_ctx(category_id, None, True) if prod_mode(p["id"]) == MODE_P2P]
+        p2p_subs = [s for s in subs if sub_mode(s["id"]) == MODE_P2P or any(prod_mode(p["id"]) == MODE_P2P for p in get_products_ctx(category_id, s["id"], True))]
+        if subs and (p2p_subs or p2p_products):
+            rows = []
+            for s in p2p_subs:
+                rows.append([InlineKeyboardButton("🤝 " + s["button_text"], callback_data=f"p2p_subcategory:{s['id']}")])
+            for p in p2p_products:
+                rows.append([InlineKeyboardButton("🤝 " + p["button_text"], callback_data=f"p2p_product:{p['id']}")])
+            rows.append([InlineKeyboardButton(get_button("back", "↩️ Back"), callback_data="p2p_market")])
+            titles = {
+                "en": f"🤝 <b>P2P · {clean(category['name'])}</b>\n\nChoose what you want to trade.",
+                "ru": f"🤝 <b>P2P · {clean(category['name'])}</b>\n\nВыберите, чем хотите торговать.",
+                "uk": f"🤝 <b>P2P · {clean(category['name'])}</b>\n\nОберіть, чим хочете торгувати.",
+                "kk": f"🤝 <b>P2P · {clean(category['name'])}</b>\n\nНені саудалағыңыз келетінін таңдаңыз.",
+            }
+            await edit_screen(query, query.from_user.id, titles[current_language()], InlineKeyboardMarkup(rows))
+            return
+        await show_p2p_products_context(query, category_id, None)
+        return
+
+    if subs:
+        session["waiting"] = "subcategory"
+        msg = {
+            "en": "🗂️ <b>CHOOSE A SUBCATEGORY</b>\n\nThen choose what you are exchanging for.",
+            "ru": "🗂️ <b>ВЫБЕРИТЕ ПОДКАТЕГОРИЮ</b>\n\nЗатем выберите, что хотите получить.",
+            "uk": "🗂️ <b>ОБЕРІТЬ ПІДКАТЕГОРІЮ</b>\n\nПотім оберіть, що хочете отримати.",
+            "kk": "🗂️ <b>САНАТТАРДЫҢ БІРІН ТАҢДАҢЫЗ</b>\n\nСодан кейін не алатыныңызды таңдаңыз.",
+        }[current_language()]
+        await edit_screen(query, query.from_user.id, msg, sub_keyboard(category_id))
+        return
+
+    session["waiting"] = "target"
+    await edit_screen(query, query.from_user.id, render_text("currency"), target_keyboard("exchange"))
+
+
+async def show_subcategory_customer(query, subcategory_id, flow="classic"):
+    sub = get_subcategory(subcategory_id)
+    if not sub or not sub["enabled"]:
+        await query.answer(
+            {"en":"This subcategory is unavailable.","ru":"Эта подкатегория недоступна.","uk":"Ця підкатегорія недоступна.","kk":"Бұл ішкі санат қолжетімсіз."}.get(current_language(), "This subcategory is unavailable."),
+            show_alert=True,
+        )
+        return
+    category = get_category(sub["category_id"])
+    session = session_for(query.from_user.id)
+    session.update({"category_id": sub["category_id"], "category_name": category["name"] if category else "", "subcategory_id": subcategory_id, "subcategory_name": sub["name"], "flow": flow})
+    if flow == "p2p" or sub_mode(subcategory_id) == MODE_P2P:
+        await show_p2p_products_context(query, sub["category_id"], subcategory_id)
+        return
+    session["waiting"] = "target"
+    await edit_screen(query, query.from_user.id, render_text("currency"), target_keyboard(f"category:{sub['category_id']}"))
+
+
+async def show_classic_products(query, currency_id):
+    session = sessions.get(query.from_user.id, {})
+    category_id = session.get("category_id")
+    sub_id = session.get("subcategory_id")
+    currency = get_currency(currency_id)
+    if not category_id or not currency or not currency["enabled"]:
+        await query.answer(
+            {"en":"Please start the exchange again.","ru":"Начните обмен заново.","uk":"Почніть обмін знову.","kk":"Айырбасты қайта бастаңыз."}[current_language()],
+            show_alert=True,
+        )
+        return
+    products = [p for p in get_products_ctx(category_id, sub_id, True) if prod_mode(p["id"]) == MODE_CLASSIC]
+    p2p_products = [p for p in get_products_ctx(category_id, sub_id, True) if prod_mode(p["id"]) == MODE_P2P]
+    session.update({"currency_id": currency_id, "currency_name": currency["name"], "waiting": "product", "flow": "classic"})
+    buttons = []
+    for product in products:
+        price = get_price(currency_id, product["id"])
+        label = product["button_text"]
+        if price and price.upper() != "NA": label = f"{label} · {price}"
+        buttons.append(InlineKeyboardButton(label, callback_data=f"product:{product['id']}"))
+    for product in p2p_products:
+        buttons.append(InlineKeyboardButton("🤝 " + product["button_text"], callback_data=f"p2p_product:{product['id']}"))
+    text = render_text("product") if products else render_text("no_products")
+    bottom = [[InlineKeyboardButton(get_button("back", "↩️ Back"), callback_data=(f"category:{category_id}" if not sub_id else f"subcategory:{sub_id}"))]]
+    await edit_screen(query, query.from_user.id, text, two_column_keyboard(buttons, bottom))
+
+
+async def show_p2p_product_menu(query, product_id):
+    product = get_product(product_id)
+    if not product or not product["enabled"] or prod_mode(product_id) != MODE_P2P:
+        await query.answer(
+            {"en":"This P2P product is unavailable.","ru":"Этот P2P товар недоступен.","uk":"Цей P2P товар недоступний.","kk":"Бұл P2P өнімі қолжетімсіз."}[current_language()],
+            show_alert=True,
+        )
+        return
+    session = session_for(query.from_user.id)
+    session.update({"category_id": product["category_id"], "subcategory_id": product["subcategory_id"], "product_id": product_id, "product": product["name"], "flow": "p2p"})
+    desc = {
+        "en":"Create your own offer or browse existing offers.",
+        "ru":"Создайте своё предложение или просмотрите готовые.",
+        "uk":"Створіть власну пропозицію або перегляньте готові.",
+        "kk":"Өз ұсынысыңызды жасаңыз немесе дайын ұсыныстарды көріңіз.",
+    }[current_language()]
+    await edit_screen(query, query.from_user.id, f"🤝 <b>{clean(product['name'])}</b>\n\n{desc}", InlineKeyboardMarkup([
+        [InlineKeyboardButton(get_button("p2p_browse", "🔎 Browse Offers"), callback_data=f"p2p_offers:{product_id}")],
+        [InlineKeyboardButton(get_button("p2p_publish", "➕ Publish Offer"), callback_data=f"p2p_publish_product:{product_id}")],
+        [InlineKeyboardButton(get_button("p2p_my_offers", "📋 My Offers"), callback_data="p2p_my_offers")],
+        [InlineKeyboardButton(get_button("back", "↩️ Back"), callback_data="p2p_market")],
+    ]))
+
+
+async def show_p2p_market(query):
+    await edit_screen(query, query.from_user.id, render_text("p2p_market"), InlineKeyboardMarkup([
+        [InlineKeyboardButton(get_button("p2p_browse", "🔎 Browse P2P Offers"), callback_data="p2p_browse_categories")],
+        [InlineKeyboardButton(get_button("p2p_publish", "➕ Publish an Offer"), callback_data="p2p_publish_categories")],
+        [InlineKeyboardButton(get_button("p2p_my_offers", "📋 My Offers"), callback_data="p2p_my_offers")],
+        [InlineKeyboardButton(get_button("home", "🏠 Main Menu"), callback_data="home")],
+    ]))
+
+
+async def show_p2p_categories(query, publish=False):
+    categories = [c for c in get_categories(True) if has_p2p_category(c["id"])]
+    if not categories:
+        await edit_screen(query, query.from_user.id, render_text("p2p_empty"), InlineKeyboardMarkup([[InlineKeyboardButton(get_button("back", "↩️ Back"), callback_data="p2p_market")]]))
+        return
+    rows = [[InlineKeyboardButton("🤝 " + c["button_text"], callback_data=f"p2p_category:{c['id']}")] for c in categories]
+    rows.append([InlineKeyboardButton(get_button("back", "↩️ Back"), callback_data="p2p_market")])
+    title = {
+        "en":"🤝 <b>P2P MARKET</b>\n\nChoose a category.",
+        "ru":"🤝 <b>P2P МАРКЕТ</b>\n\nВыберите категорию.",
+        "uk":"🤝 <b>P2P МАРКЕТ</b>\n\nОберіть категорію.",
+        "kk":"🤝 <b>P2P МАРКЕТ</b>\n\nСанатты таңдаңыз.",
+    }[current_language()]
+    await edit_screen(query, query.from_user.id, title, InlineKeyboardMarkup(rows))
+
+
+async def show_p2p_products_context(query, category_id, sub_id):
+    session = session_for(query.from_user.id)
+    session.update({"category_id": category_id, "subcategory_id": sub_id, "flow": "p2p"})
+    products = [p for p in get_products_ctx(category_id, sub_id, True) if prod_mode(p["id"]) == MODE_P2P]
+    if not products:
+        await edit_screen(query, query.from_user.id, render_text("p2p_empty"), InlineKeyboardMarkup([[InlineKeyboardButton(get_button("back", "↩️ Back"), callback_data=(f"p2p_category:{category_id}" if sub_id is None else f"p2p_subcategory:{sub_id}"))]]))
+        return
+    rows = [[InlineKeyboardButton("🤝 " + p["button_text"], callback_data=f"p2p_product:{p['id']}")] for p in products]
+    rows.append([InlineKeyboardButton(get_button("back", "↩️ Back"), callback_data=(f"p2p_category:{category_id}" if sub_id is None else f"p2p_subcategory:{sub_id}"))])
+    title = {
+        "en":"🤝 <b>CHOOSE WHAT YOU ARE OFFERING</b>\n\nSelect the item you want to list.",
+        "ru":"🤝 <b>ВЫБЕРИТЕ, ЧТО ПРЕДЛАГАЕТЕ</b>\n\nВыберите товар, который хотите выставить.",
+        "uk":"🤝 <b>ОБЕРІТЬ, ЩО ПРОПОНУЄТЕ</b>\n\nОберіть товар, який хочете виставити.",
+        "kk":"🤝 <b>НЕ ҰСЫНАТЫНЫҢЫЗДЫ ТАҢДАҢЫЗ</b>\n\nЖариялайтын тауарды таңдаңыз.",
+    }[current_language()]
+    await edit_screen(query, query.from_user.id, title, InlineKeyboardMarkup(rows))
+
+
+async def show_p2p_offers(query, product_id):
+    product = get_product(product_id)
+    if not product:
+        await query.answer({"en":"Product not found.","ru":"Товар не найден.","uk":"Товар не знайдено.","kk":"Өнім табылмады."}[current_language()], show_alert=True)
+        return
+    offers = active_p2p_offers(product_id)
+    if not offers:
+        title = {"en":"🤝 <b>NO OFFERS YET</b>\n\nYou can publish the first offer.","ru":"🤝 <b>ПОКА НЕТ ПРЕДЛОЖЕНИЙ</b>\n\nВы можете опубликовать первое предложение.","uk":"🤝 <b>ПРОПОЗИЦІЙ ЩЕ НЕМАЄ</b>\n\nВи можете опублікувати першу пропозицію.","kk":"🤝 <b>ӘЗІР ҰСЫНЫСТАР ЖОҚ</b>\n\nБірінші ұсынысты жариялай аласыз."}[current_language()]
+        await edit_screen(query, query.from_user.id, title, InlineKeyboardMarkup([
+            [InlineKeyboardButton(get_button("p2p_publish", "➕ Publish Offer"), callback_data=f"p2p_publish_product:{product_id}")],
+            [InlineKeyboardButton(get_button("back", "↩️ Back"), callback_data=f"p2p_product:{product_id}")],
+        ]))
+        return
+    rows = []
+    for offer in offers:
+        fee_total = fee_for(offer["source_amount"], offer["target_amount"])["amount"]
+        label = f"{offer['source_amount']:,} → {fmt_dec(offer['target_amount'])} {offer['target_name']} (+{fmt_dec(fee_total)})"
+        rows.append([InlineKeyboardButton(label, callback_data=f"p2p_offer:{offer['id']}")])
+    rows.append([InlineKeyboardButton(get_button("p2p_publish", "➕ Publish Offer"), callback_data=f"p2p_publish_product:{product_id}")])
+    rows.append([InlineKeyboardButton(get_button("back", "↩️ Back"), callback_data=f"p2p_product:{product_id}")])
+    title = {"en":"🤝 <b>P2P OFFERS</b>\n\nSeller identities are hidden from buyers.","ru":"🤝 <b>P2P ПРЕДЛОЖЕНИЯ</b>\n\nЛичность продавца скрыта от покупателей.","uk":"🤝 <b>P2P ПРОПОЗИЦІЇ</b>\n\nОсобу продавця приховано від покупців.","kk":"🤝 <b>P2P ҰСЫНЫСТАР</b>\n\nСатушының кім екені сатып алушылардан жасырылған."}[current_language()]
+    await edit_screen(query, query.from_user.id, title, InlineKeyboardMarkup(rows))
+
+
+async def show_my_p2p_offer(query, offer_id):
+    offer = get_p2p_offer(offer_id)
+    if not offer or offer["seller_id"] != query.from_user.id:
+        await query.answer({"en":"Offer not found.","ru":"Предложение не найдено.","uk":"Пропозицію не знайдено.","kk":"Ұсыныс табылмады."}[current_language()], show_alert=True)
+        return
+    fee_total = fee_for(offer["source_amount"], offer["target_amount"])["amount"]
+    text = render_text(
+        "p2p_my_offers",
+    ) + "\n\n" + (
+        f"🔐 <b>{clean(offer['offer_number'])}</b>\n"
+        f"📦 {clean(offer['product_name'])}\n"
+        f"💰 {offer['source_amount']:,}\n"
+        f"🎯 {fmt_dec(offer['target_amount'])} {clean(offer['target_name'])}\n"
+        f"💸 {fmt_dec(fee_total)}\n"
+        f"📌 {clean(offer['status'])}"
+    )
+    rows = []
+    if offer["status"] == P2P_ACTIVE:
+        cancel_label = {"en":"🗑️ Cancel Offer","ru":"🗑️ Отменить предложение","uk":"🗑️ Скасувати пропозицію","kk":"🗑️ Ұсынысты болдырмау"}[current_language()]
+        rows.append([InlineKeyboardButton(cancel_label, callback_data=f"p2p_cancel_offer:{offer_id}")])
+    rows.append([InlineKeyboardButton(get_button("back", "↩️ Back"), callback_data="p2p_my_offers")])
+    await edit_screen(query, query.from_user.id, text, InlineKeyboardMarkup(rows))
+
+
+# ============================================================
+# LANGUAGE / HOW-IT-WORKS ADMIN SCREENS
+# ============================================================
+
+def admin_keyboard():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(ui("products"),callback_data="admin_products"),InlineKeyboardButton(ui("categories"),callback_data="admin_categories")],
+        [InlineKeyboardButton(ui("targets"),callback_data="admin_currencies"),InlineKeyboardButton(ui("prices"),callback_data="admin_prices")],
+        [InlineKeyboardButton(ui("p2p"),callback_data="admin_p2p"),InlineKeyboardButton(ui("texts"),callback_data="admin_texts")],
+        [InlineKeyboardButton(ui("buttons"),callback_data="admin_buttons"),InlineKeyboardButton(ui("settings"),callback_data="admin_settings")],
+        [InlineKeyboardButton(ui("admins"),callback_data="admin_admins"),InlineKeyboardButton(ui("orders"),callback_data="admin_orders")],
+        [InlineKeyboardButton(ui("language"),callback_data="admin_language")],
+        [InlineKeyboardButton(ui("preview"),callback_data="home")],
+    ])
+
+
+async def show_language_settings(query):
+    rows = []
+    for code, label in SUPPORTED_LANGUAGES.items():
+        prefix = "✅ " if code == current_language() else ""
+        rows.append([InlineKeyboardButton(prefix + label, callback_data=f"set_language:{code}")])
+    rows.append([InlineKeyboardButton(ui("back_admin"), callback_data="admin")])
+    await edit_screen(query, query.from_user.id, ui("language_title"), InlineKeyboardMarkup(rows))
+
+
+async def show_settings(query):
+    cleanup = ui("yes") if get_setting("delete_user_messages", "1") == "1" else ui("no")
+    how_status = ui("shown") if get_setting("show_how", "1") == "1" else ui("hidden")
+    await edit_screen(
+        query,
+        query.from_user.id,
+        f"{ui('settings_title')}\n\n"
+        f"🏷️ {('Shop name' if current_language() == 'en' else {'ru':'Название магазина','uk':'Назва магазину','kk':'Дүкен атауы'}[current_language()])}: <b>{clean(get_setting('shop_name'))}</b>\n"
+        f"{ui('support_username')}: <b>{clean(get_setting('admin_username'))}</b>\n"
+        f"{ui('recipient')}: <code>{clean(get_setting('order_recipient_chat_id') or 'not set')}</code>\n"
+        f"{ui('max_amount')}: <b>{clean(get_setting('max_custom_amount','1000000'))}</b>\n"
+        f"{ui('cleanup')}: <b>{cleanup}</b>\n"
+        f"{ui('show_how')}: <b>{how_status}</b>\n"
+        f"🌐 {LANGUAGE_NAMES[current_language()]}",
+        InlineKeyboardMarkup([
+            [InlineKeyboardButton("🏷️ Shop Name",callback_data="change_shop_name"),InlineKeyboardButton("👤 Support Username",callback_data="change_admin_username")],
+            [InlineKeyboardButton("🆔 Order Recipient",callback_data="change_recipient"),InlineKeyboardButton("🔢 Custom Amount Limit",callback_data="change_max_amount")],
+            [InlineKeyboardButton("🧹 Toggle Chat Cleanup",callback_data="toggle_cleanup")],
+            [InlineKeyboardButton(("🚫 Hide How It Works" if get_setting("show_how","1")=="1" else "✅ Show How It Works"),callback_data="toggle_how")],
+            [InlineKeyboardButton(ui("language"),callback_data="admin_language")],
+            [InlineKeyboardButton(ui("back_admin"),callback_data="admin")],
+        ])
+    )
+
+
+# Localize the top-level text/button editor labels.
+def p2p_text_names():
+    labels = {
+        "en": {"welcome":"👋 Welcome","category":"🔄 What You Exchange","currency":"🎯 What You Exchange For","product":"📦 Exchange Options","custom":"✏️ Custom Amount","username":"👤 Roblox Username","how":"ℹ️ How It Works","confirmation":"✅ Order Confirmation","cancelled":"❌ Cancelled","no_categories":"🗂️ No Categories","no_products":"📦 No Products","invalid_amount":"⚠️ Invalid Amount","invalid_username":"⚠️ Invalid Username","order_error":"⚠️ Order Error","no_session":"ℹ️ No Session","p2p_market":"🤝 P2P Market","p2p_offer_amount":"💰 P2P Offer Amount","p2p_offer_target":"🎯 P2P What You Want","p2p_offer_target_amount":"💵 P2P Requested Amount","p2p_preview":"🔎 P2P Preview","p2p_published":"✅ P2P Published","p2p_empty":"🤝 P2P Empty Market","p2p_details":"📋 P2P Offer Details","p2p_buy_confirm":"🛒 P2P Buy Confirmation","p2p_bought":"✅ P2P Purchase Sent","p2p_seller_notice":"🔔 P2P Seller Notice","p2p_my_offers":"📋 P2P My Offers","p2p_cancelled":"✅ P2P Offer Cancelled"},
+        "ru": {"welcome":"👋 Приветствие","category":"🔄 Что вы обмениваете","currency":"🎯 На что обмениваете","product":"📦 Варианты обмена","custom":"✏️ Своё количество","username":"👤 Roblox Username","how":"ℹ️ Как это работает","confirmation":"✅ Подтверждение заказа","cancelled":"❌ Отмена","no_categories":"🗂️ Нет категорий","no_products":"📦 Нет товаров","invalid_amount":"⚠️ Неверное количество","invalid_username":"⚠️ Неверное имя Roblox","order_error":"⚠️ Ошибка заказа","no_session":"ℹ️ Нет сессии","p2p_market":"🤝 P2P Маркет","p2p_offer_amount":"💰 Количество P2P предложения","p2p_offer_target":"🎯 Что хотите получить","p2p_offer_target_amount":"💵 Запрашиваемое количество","p2p_preview":"🔎 Предпросмотр P2P","p2p_published":"✅ P2P опубликовано","p2p_empty":"🤝 P2P пустой маркет","p2p_details":"📋 Детали P2P предложения","p2p_buy_confirm":"🛒 Подтверждение P2P покупки","p2p_bought":"✅ P2P заказ отправлен","p2p_seller_notice":"🔔 Уведомление продавцу P2P","p2p_my_offers":"📋 Мои P2P предложения","p2p_cancelled":"✅ P2P отменено"},
+        "uk": {"welcome":"👋 Вітання","category":"🔄 Що ви обмінюєте","currency":"🎯 На що обмінюєте","product":"📦 Варіанти обміну","custom":"✏️ Власна кількість","username":"👤 Roblox Username","how":"ℹ️ Як це працює","confirmation":"✅ Підтвердження замовлення","cancelled":"❌ Скасовано","no_categories":"🗂️ Немає категорій","no_products":"📦 Немає товарів","invalid_amount":"⚠️ Неправильна кількість","invalid_username":"⚠️ Неправильне ім'я Roblox","order_error":"⚠️ Помилка замовлення","no_session":"ℹ️ Немає сесії","p2p_market":"🤝 P2P Маркет","p2p_offer_amount":"💰 Кількість P2P пропозиції","p2p_offer_target":"🎯 Що хочете отримати","p2p_offer_target_amount":"💵 Запитувана кількість","p2p_preview":"🔎 Перегляд P2P","p2p_published":"✅ P2P опубліковано","p2p_empty":"🤝 Порожній P2P маркет","p2p_details":"📋 Деталі P2P пропозиції","p2p_buy_confirm":"🛒 Підтвердження P2P купівлі","p2p_bought":"✅ P2P замовлення надіслано","p2p_seller_notice":"🔔 Сповіщення продавцю P2P","p2p_my_offers":"📋 Мої P2P пропозиції","p2p_cancelled":"✅ P2P скасовано"},
+        "kk": {"welcome":"👋 Сәлемдесу","category":"🔄 Нені айырбастайсыз","currency":"🎯 Неге айырбастайсыз","product":"📦 Айырбас нұсқалары","custom":"✏️ Жеке мөлшер","username":"👤 Roblox Username","how":"ℹ️ Қалай жұмыс істейді","confirmation":"✅ Тапсырысты растау","cancelled":"❌ Болдырылмады","no_categories":"🗂️ Санаттар жоқ","no_products":"📦 Өнімдер жоқ","invalid_amount":"⚠️ Дұрыс емес мөлшер","invalid_username":"⚠️ Roblox аты қате","order_error":"⚠️ Тапсырыс қатесі","no_session":"ℹ️ Сессия жоқ","p2p_market":"🤝 P2P Маркет","p2p_offer_amount":"💰 P2P ұсыныс мөлшері","p2p_offer_target":"🎯 Не алғыңыз келеді","p2p_offer_target_amount":"💵 Сұралған мөлшер","p2p_preview":"🔎 P2P алдын ала көру","p2p_published":"✅ P2P жарияланды","p2p_empty":"🤝 P2P бос маркет","p2p_details":"📋 P2P ұсыныс мәліметтері","p2p_buy_confirm":"🛒 P2P сатып алуды растау","p2p_bought":"✅ P2P тапсырысы жіберілді","p2p_seller_notice":"🔔 P2P сатушыға хабарлама","p2p_my_offers":"📋 Менің P2P ұсыныстарым","p2p_cancelled":"✅ P2P болдырылмады"},
+    }
+    return labels[current_language()]
+
+
+async def show_texts(query):
+    rows=[]
+    for key,label in p2p_text_names().items():
+        rows.append([InlineKeyboardButton(label,callback_data=f"edit_text:{key}")])
+    rows.append([InlineKeyboardButton(ui("back_admin"),callback_data="admin")])
+    await edit_screen(query,query.from_user.id,ui("texts_title"),InlineKeyboardMarkup(rows))
+
+
+async def show_buttons(query):
+    rows=[]
+    for key in TRANSLATED_BUTTONS["en"]:
+        current = get_button(key, TRANSLATED_BUTTONS[current_language()].get(key, key))
+        rows.append([InlineKeyboardButton(f"{TRANSLATED_BUTTONS[current_language()].get(key,key)}: {current}",callback_data=f"edit_button:{key}")])
+    rows.append([InlineKeyboardButton(ui("back_admin"),callback_data="admin")])
+    await edit_screen(query,query.from_user.id,ui("buttons_title"),InlineKeyboardMarkup(rows))
+
+
+# ============================================================
+# LOCALIZED ADMIN INPUT PROMPTS (COMMON ACTIONS)
+# ============================================================
+
+PROMPTS = {
+    "ru": {
+        "add_category_name":"➕ <b>ДОБАВИТЬ КАТЕГОРИЮ</b>\n\nОтправьте название категории.",
+        "rename_category":"🔤 <b>ПЕРЕИМЕНОВАТЬ КАТЕГОРИЮ</b>\n\nОтправьте новое название.",
+        "category_button":"🔘 <b>КНОПКА КАТЕГОРИИ</b>\n\nОтправьте новый текст кнопки.",
+        "category_desc":"📝 <b>ОПИСАНИЕ КАТЕГОРИИ</b>\n\nОтправьте описание или <code>-</code>.",
+        "add_product_name":"➕ <b>ДОБАВИТЬ ТОВАР</b>\n\nОтправьте название товара.",
+        "change_product_amount":"🔢 <b>КОЛИЧЕСТВО</b>\n\nОтправьте новое количество Robux.\nПример: <code>2000</code>",
+        "product_button":"🔘 <b>КНОПКА ТОВАРА</b>\n\nОтправьте новый текст кнопки.",
+        "product_desc":"📝 <b>ОПИСАНИЕ ТОВАРА</b>\n\nОтправьте описание или <code>-</code>.",
+        "add_currency_name":"➕ <b>ДОБАВИТЬ ЦЕЛЬ ОБМЕНА</b>\n\nОтправьте название.",
+        "rename_currency":"🔤 <b>ИЗМЕНИТЬ ЦЕЛЬ ОБМЕНА</b>\n\nОтправьте новое название.",
+        "currency_button":"🔘 <b>КНОПКА ЦЕЛИ ОБМЕНА</b>\n\nОтправьте новый текст кнопки.",
+        "set_price":"💰 <b>УСТАНОВИТЬ ЦЕНУ</b>\n\nОтправьте новую цену.",
+        "set_custom_price":"✏️ <b>ЦЕНА СВОЕГО КОЛИЧЕСТВА</b>\n\nОтправьте новую цену.",
+        "change_shop_name":"🏷️ <b>НАЗВАНИЕ МАГАЗИНА</b>\n\nОтправьте новое название.",
+        "change_admin_username":"👤 <b>USERNAME ПОДДЕРЖКИ</b>\n\nОтправьте username.",
+        "change_recipient":"🆔 <b>ПОЛУЧАТЕЛЬ ЗАКАЗОВ</b>\n\nОтправьте числовой Telegram ID.",
+        "change_max_amount":"🔢 <b>ЛИМИТ СВОЕГО КОЛИЧЕСТВА</b>\n\nОтправьте максимальное значение.",
+        "add_admin_id":"➕ <b>ДОБАВИТЬ АДМИНИСТРАТОРА</b>\n\nОтправьте числовой Telegram ID.",
+        "add_subcategory":"➕ <b>ДОБАВИТЬ ПОДКАТЕГОРИЮ</b>\n\nОтправьте название.",
+        "rename_subcategory":"🔤 <b>ПЕРЕИМЕНОВАТЬ ПОДКАТЕГОРИЮ</b>\n\nОтправьте новое название.",
+        "subcategory_button":"🔘 <b>КНОПКА ПОДКАТЕГОРИИ</b>\n\nОтправьте новый текст.",
+        "subcategory_desc":"📝 <b>ОПИСАНИЕ ПОДКАТЕГОРИИ</b>\n\nОтправьте описание или <code>-</code>.",
+        "p2p_fee_min_edit":"🔢 <b>МИНИМАЛЬНОЕ КОЛИЧЕСТВО</b>\n\nОтправьте минимум.",
+        "p2p_fee_max_edit":"🔢 <b>МАКСИМАЛЬНОЕ КОЛИЧЕСТВО</b>\n\nОтправьте максимум или <code>-</code> для безлимита.",
+        "p2p_fee_value":"💸 <b>РАЗМЕР КОМИССИИ</b>\n\nОтправьте значение комиссии.",
+    },
+    "uk": {
+        "add_category_name":"➕ <b>ДОДАТИ КАТЕГОРІЮ</b>\n\nНадішліть назву категорії.",
+        "rename_category":"🔤 <b>ПЕРЕЙМЕНУВАТИ КАТЕГОРІЮ</b>\n\nНадішліть нову назву.",
+        "category_button":"🔘 <b>КНОПКА КАТЕГОРІЇ</b>\n\nНадішліть новий текст кнопки.",
+        "category_desc":"📝 <b>ОПИС КАТЕГОРІЇ</b>\n\nНадішліть опис або <code>-</code>.",
+        "add_product_name":"➕ <b>ДОДАТИ ТОВАР</b>\n\nНадішліть назву товару.",
+        "change_product_amount":"🔢 <b>КІЛЬКІСТЬ</b>\n\nНадішліть нову кількість Robux.\nПриклад: <code>2000</code>",
+        "product_button":"🔘 <b>КНОПКА ТОВАРУ</b>\n\nНадішліть новий текст кнопки.",
+        "product_desc":"📝 <b>ОПИС ТОВАРУ</b>\n\nНадішліть опис або <code>-</code>.",
+        "add_currency_name":"➕ <b>ДОДАТИ ЦІЛЬ ОБМІНУ</b>\n\nНадішліть назву.",
+        "rename_currency":"🔤 <b>ЗМІНИТИ ЦІЛЬ ОБМІНУ</b>\n\nНадішліть нову назву.",
+        "currency_button":"🔘 <b>КНОПКА ЦІЛІ ОБМІНУ</b>\n\nНадішліть новий текст.",
+        "set_price":"💰 <b>ВСТАНОВИТИ ЦІНУ</b>\n\nНадішліть нову ціну.",
+        "set_custom_price":"✏️ <b>ЦІНА ВЛАСНОЇ КІЛЬКОСТІ</b>\n\nНадішліть нову ціну.",
+        "change_shop_name":"🏷️ <b>НАЗВА МАГАЗИНУ</b>\n\nНадішліть нову назву.",
+        "change_admin_username":"👤 <b>USERNAME ПІДТРИМКИ</b>\n\nНадішліть username.",
+        "change_recipient":"🆔 <b>ОТРИМУВАЧ ЗАМОВЛЕНЬ</b>\n\nНадішліть числовий Telegram ID.",
+        "change_max_amount":"🔢 <b>ЛІМІТ ВЛАСНОЇ КІЛЬКОСТІ</b>\n\nНадішліть максимальне значення.",
+        "add_admin_id":"➕ <b>ДОДАТИ АДМІНІСТРАТОРА</b>\n\nНадішліть числовий Telegram ID.",
+        "add_subcategory":"➕ <b>ДОДАТИ ПІДКАТЕГОРІЮ</b>\n\nНадішліть назву.",
+        "rename_subcategory":"🔤 <b>ПЕРЕЙМЕНУВАТИ ПІДКАТЕГОРІЮ</b>\n\nНадішліть нову назву.",
+        "subcategory_button":"🔘 <b>КНОПКА ПІДКАТЕГОРІЇ</b>\n\nНадішліть новий текст.",
+        "subcategory_desc":"📝 <b>ОПИС ПІДКАТЕГОРІЇ</b>\n\nНадішліть опис або <code>-</code>.",
+        "p2p_fee_min_edit":"🔢 <b>МІНІМАЛЬНА КІЛЬКІСТЬ</b>\n\nНадішліть мінімум.",
+        "p2p_fee_max_edit":"🔢 <b>МАКСИМАЛЬНА КІЛЬКІСТЬ</b>\n\nНадішліть максимум або <code>-</code>.",
+        "p2p_fee_value":"💸 <b>РОЗМІР КОМІСІЇ</b>\n\nНадішліть значення комісії.",
+    },
+    "kk": {
+        "add_category_name":"➕ <b>САНАТ ҚОСУ</b>\n\nСанат атауын жіберіңіз.",
+        "rename_category":"🔤 <b>САНАТ АТАУЫН ӨЗГЕРТУ</b>\n\nЖаңа атауды жіберіңіз.",
+        "category_button":"🔘 <b>САНАТ БАТЫРМАСЫ</b>\n\nЖаңа батырма мәтінін жіберіңіз.",
+        "category_desc":"📝 <b>САНАТ СИПАТТАМАСЫ</b>\n\nСипаттаманы немесе <code>-</code> жіберіңіз.",
+        "add_product_name":"➕ <b>ӨНІМ ҚОСУ</b>\n\nӨнім атауын жіберіңіз.",
+        "change_product_amount":"🔢 <b>МӨЛШЕР</b>\n\nЖаңа Robux мөлшерін жіберіңіз.\nМысал: <code>2000</code>",
+        "product_button":"🔘 <b>ӨНІМ БАТЫРМАСЫ</b>\n\nЖаңа батырма мәтінін жіберіңіз.",
+        "product_desc":"📝 <b>ӨНІМ СИПАТТАМАСЫ</b>\n\nСипаттаманы немесе <code>-</code> жіберіңіз.",
+        "add_currency_name":"➕ <b>АЙЫРБАС МАҚСАТЫН ҚОСУ</b>\n\nАтауын жіберіңіз.",
+        "rename_currency":"🔤 <b>АЙЫРБАС МАҚСАТЫН ӨЗГЕРТУ</b>\n\nЖаңа атауды жіберіңіз.",
+        "currency_button":"🔘 <b>АЙЫРБАС МАҚСАТЫ БАТЫРМАСЫ</b>\n\nЖаңа мәтінді жіберіңіз.",
+        "set_price":"💰 <b>БАҒА ОРНАТУ</b>\n\nЖаңа бағаны жіберіңіз.",
+        "set_custom_price":"✏️ <b>ЖЕКЕ МӨЛШЕР БАҒАСЫ</b>\n\nЖаңа бағаны жіберіңіз.",
+        "change_shop_name":"🏷️ <b>ДҮКЕН АТАУЫ</b>\n\nЖаңа атауды жіберіңіз.",
+        "change_admin_username":"👤 <b>ҚОЛДАУ USERNAME-І</b>\n\nUsername жіберіңіз.",
+        "change_recipient":"🆔 <b>ТАПСЫРЫС АЛУШЫСЫ</b>\n\nСандық Telegram ID жіберіңіз.",
+        "change_max_amount":"🔢 <b>ЖЕКЕ МӨЛШЕР ЛИМИТІ</b>\n\nМаксималды мәнді жіберіңіз.",
+        "add_admin_id":"➕ <b>ӘКІМШІ ҚОСУ</b>\n\nСандық Telegram ID жіберіңіз.",
+        "add_subcategory":"➕ <b>ІШКІ САНАТ ҚОСУ</b>\n\nАтауын жіберіңіз.",
+        "rename_subcategory":"🔤 <b>ІШКІ САНАТ АТАУЫН ӨЗГЕРТУ</b>\n\nЖаңа атауды жіберіңіз.",
+        "subcategory_button":"🔘 <b>ІШКІ САНАТ БАТЫРМАСЫ</b>\n\nЖаңа мәтінді жіберіңіз.",
+        "subcategory_desc":"📝 <b>ІШКІ САНАТ СИПАТТАМАСЫ</b>\n\nСипаттаманы немесе <code>-</code> жіберіңіз.",
+        "p2p_fee_min_edit":"🔢 <b>МИНИМУМ МӨЛШЕР</b>\n\nМинимумды жіберіңіз.",
+        "p2p_fee_max_edit":"🔢 <b>МАКСИМУМ МӨЛШЕР</b>\n\nМаксимумды немесе <code>-</code> жіберіңіз.",
+        "p2p_fee_value":"💸 <b>КОМИССИЯ МӘНІ</b>\n\nКомиссия мәнін жіберіңіз.",
+    },
+}
+
+_ASK_TEXT_INPUT_BEFORE_LANGUAGE = ask_text_input
+
+async def ask_text_input(query, action, prompt, **data):
+    localized = PROMPTS.get(current_language(), {}).get(action)
+    await _ASK_TEXT_INPUT_BEFORE_LANGUAGE(query, action, localized or prompt, **data)
+
+
+# ============================================================
+# FINAL LANGUAGE CALLBACK OVERLAY
+# ============================================================
+
+_CALLBACK_BEFORE_LANGUAGE = callback_handler
+
+async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    data = query.data or ""
+    user = query.from_user
+
+    if data == "admin_language":
+        if not is_admin(user):
+            await query.answer(ui("access_denied"), show_alert=True)
+            return
+        await show_language_settings(query)
+        return
+
+    if data.startswith("set_language:"):
+        if not is_admin(user):
+            await query.answer(ui("access_denied"), show_alert=True)
+            return
+        lang = data.split(":", 1)[1]
+        if lang not in SUPPORTED_LANGUAGES:
+            await query.answer("Unsupported language.", show_alert=True)
+            return
+        set_language(lang)
+        await edit_screen(
+            query,
+            user.id,
+            ui("language_saved", language=LANGUAGE_NAMES[lang]),
+            InlineKeyboardMarkup([[InlineKeyboardButton(ui("back_admin"), callback_data="admin")]])
+        )
+        return
+
+    if data == "toggle_how":
+        if not is_admin(user):
+            await query.answer(ui("access_denied"), show_alert=True)
+            return
+        current = get_setting("show_how", "1")
+        set_setting("show_how", "0" if current == "1" else "1")
+        await show_settings(query)
+        return
+
+    if data == "how" and get_setting("show_how", "1") != "1":
+        await edit_screen(query, user.id, render_text("welcome"), main_keyboard())
+        return
+
+    await _CALLBACK_BEFORE_LANGUAGE(update, context)
+
+
+# Keep runtime entrypoint after the final overlays.
+
 if __name__ == "__main__":
     run()
