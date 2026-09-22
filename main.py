@@ -6676,7 +6676,26 @@ def init_db():
     _INIT_DB_BEFORE_LANGUAGE()
     conn = db()
     conn.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('bot_language','en')")
-    conn.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('show_how','1')")
+
+    # Hide the old How It Works button on the main menu by default.
+    # Existing databases get this applied once, while the admin can still
+    # turn the section back on later from Shop Settings.
+    migrated = conn.execute(
+        "SELECT value FROM settings WHERE key='how_hidden_migrated'"
+    ).fetchone()
+    if not migrated:
+        conn.execute(
+            "INSERT INTO settings(key,value) VALUES('show_how','0') "
+            "ON CONFLICT(key) DO UPDATE SET value='0'"
+        )
+        conn.execute(
+            "INSERT INTO settings(key,value) VALUES('how_hidden_migrated','1')"
+        )
+    else:
+        conn.execute(
+            "INSERT OR IGNORE INTO settings(key,value) VALUES('show_how','0')"
+        )
+
     conn.commit()
     conn.close()
     _ensure_localized_tables()
@@ -6687,11 +6706,23 @@ def init_db():
 # ============================================================
 
 def main_keyboard():
-    rows = [[InlineKeyboardButton(get_button("exchange", "🔄 Exchange"), callback_data="exchange")],
-            [InlineKeyboardButton(get_button("p2p_market", "🤝 P2P Market"), callback_data="p2p_market")]]
-    if get_setting("show_how", "1") == "1":
-        rows.append([InlineKeyboardButton(get_button("how", "ℹ️ How It Works"), callback_data="how")])
-    return InlineKeyboardMarkup(rows)
+    # The old How It Works button is intentionally not shown on the
+    # customer start screen. The section remains available only when the
+    # admin explicitly enables it from Shop Settings.
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                get_button("exchange", "🔄 Exchange"),
+                callback_data="exchange",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                get_button("p2p_market", "🤝 P2P Market"),
+                callback_data="p2p_market",
+            )
+        ],
+    ])
 
 
 async def show_exchange(query):
@@ -6935,7 +6966,7 @@ def admin_keyboard():
         [InlineKeyboardButton(ui("p2p"),callback_data="admin_p2p"),InlineKeyboardButton(ui("texts"),callback_data="admin_texts")],
         [InlineKeyboardButton(ui("buttons"),callback_data="admin_buttons"),InlineKeyboardButton(ui("settings"),callback_data="admin_settings")],
         [InlineKeyboardButton(ui("admins"),callback_data="admin_admins"),InlineKeyboardButton(ui("orders"),callback_data="admin_orders")],
-        [InlineKeyboardButton(ui("language"),callback_data="admin_language")],
+        [InlineKeyboardButton("🌐 " + ui("language"),callback_data="admin_language")],
         [InlineKeyboardButton(ui("preview"),callback_data="home")],
     ])
 
