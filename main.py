@@ -4,6 +4,7 @@ import html
 import logging
 import secrets
 import sqlite3
+from contextvars import ContextVar
 from datetime import datetime
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -7178,6 +7179,232 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await _CALLBACK_BEFORE_LANGUAGE(update, context)
 
+
+
+# ============================================================
+# PER-USER LANGUAGE SWITCH
+# ============================================================
+
+# The admin language setting remains the default language for everyone.
+# Customers can override that default for themselves with the language
+# button in the main menu. Their choice is stored in SQLite and survives
+# restarts/redeploys as long as the same database is used.
+USER_LANGUAGE_CONTEXT = ContextVar("srpexchange_user_language_context", default=None)
+
+
+_USER_LANG_INIT_BEFORE = init_db
+
+
+def _ensure_user_language_table():
+    conn = db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS user_languages (
+            telegram_id INTEGER PRIMARY KEY,
+            language TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def init_db():
+    _USER_LANG_INIT_BEFORE()
+    _ensure_user_language_table()
+
+
+def get_user_language(user_id):
+    if not user_id:
+        return None
+    try:
+        conn = db()
+        row = conn.execute(
+            "SELECT language FROM user_languages WHERE telegram_id=?",
+            (int(user_id),),
+        ).fetchone()
+        conn.close()
+    except (sqlite3.Error, TypeError, ValueError):
+        return None
+    lang = row["language"] if row else None
+    return lang if lang in SUPPORTED_LANGUAGES else None
+
+
+def set_user_language(user_id, lang):
+    if lang not in SUPPORTED_LANGUAGES:
+        raise ValueError("Unsupported language")
+    conn = db()
+    conn.execute(
+        "INSERT INTO user_languages(telegram_id,language) VALUES(?,?) "
+        "ON CONFLICT(telegram_id) DO UPDATE SET language=excluded.language",
+        (int(user_id), lang),
+    )
+    conn.commit()
+    conn.close()
+
+
+# Replace the global-only language lookup with a user-aware lookup.
+_CURRENT_LANGUAGE_BEFORE_USER_OVERRIDE = current_language
+
+
+def current_language():
+    user_id = USER_LANGUAGE_CONTEXT.get()
+    if user_id is not None:
+        user_lang = get_user_language(user_id)
+        if user_lang:
+            return user_lang
+    lang = get_setting("bot_language", "en")
+    return lang if lang in SUPPORTED_LANGUAGES else "en"
+
+
+# Ensure the language button exists in every built-in language pack.
+_LANGUAGE_BUTTONS = {
+    "en": "🌐 Language",
+    "ru": "🌐 Язык",
+    "uk": "🌐 Мова",
+    "kk": "🌐 Тіл",
+}
+for _lang, _label in _LANGUAGE_BUTTONS.items():
+    TRANSLATED_BUTTONS.setdefault(_lang, {}).setdefault("language", _label)
+
+
+_USER_LANGUAGE_TITLES = {
+    "en": "🌐 <b>LANGUAGE</b>\n\nChoose the language you want to use.",
+    "ru": "🌐 <b>ЯЗЫК</b>\n\nВыберите язык, который хотите использовать.",
+    "uk": "🌐 <b>МОВА</b>\n\nОберіть мову, яку хочете використовувати.",
+    "kk": "🌐 <b>ТІЛ</b>\n\nҚолданғыңыз келетін тілді таңдаңыз.",
+}
+
+_USER_LANGUAGE_SAVED = {
+    "en": "✅ <b>LANGUAGE UPDATED</b>\n\nThe bot is now using <b>{language}</b> for you.",
+    "ru": "✅ <b>ЯЗЫК ОБНОВЛЁН</b>\n\nТеперь бот использует <b>{language}</b> для вас.",
+    "uk": "✅ <b>МОВУ ОНОВЛЕНО</b>\n\nТепер бот використовує <b>{language}</b> для вас.",
+    "kk": "✅ <b>ТІЛ ЖАҢАРТЫЛДЫ</b>\n\nЕнді бот сіз үшін <b>{language}</b> тілін қолданады.",
+}
+
+
+def _user_language_title():
+    return _USER_LANGUAGE_TITLES.get(current_language(), _USER_LANGUAGE_TITLES["en"])
+
+
+def _user_language_saved(language_name):
+    template = _USER_LANGUAGE_SAVED.get(current_language(), _USER_LANGUAGE_SAVED["en"])
+    return template.format(language=language_name)
+
+
+async def show_user_language_settings(query):
+    lang = current_language()
+    selected = get_user_language(query.from_user.id) or lang
+    rows = []
+    for code, label in SUPPORTED_LANGUAGES.items():
+        prefix = "✅ " if code == selected else ""
+        rows.append([
+            InlineKeyboardButton(
+                prefix + label,
+                callback_data=f"user_set_language:{code}",
+            )
+        ])
+    rows.append([
+        InlineKeyboardButton(
+            get_button("back", "↩️ Back"),
+            callback_data="home",
+        )
+    ])
+    await edit_screen(
+        query,
+        query.from_user.id,
+        _user_language_title(),
+        InlineKeyboardMarkup(rows),
+    )
+
+
+# Customer main menu: Language is directly below P2P Market.
+def main_keyboard():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                get_button("exchange", "🔄 Exchange"),
+                callback_data="exchange",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                get_button("p2p_market", "🤝 P2P Market"),
+                callback_data="p2p_market",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                get_button("language", "🌐 Language"),
+                callback_data="user_language",
+            )
+        ],
+    ])
+
+
+# Set the per-update language context before any localized helper runs.
+_START_BEFORE_USER_LANGUAGE = start
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    USER_LANGUAGE_CONTEXT.set(update.effective_user.id)
+    await _START_BEFORE_USER_LANGUAGE(update, context)
+
+
+_ADMIN_BEFORE_USER_LANGUAGE = admin
+
+
+async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    USER_LANGUAGE_CONTEXT.set(update.effective_user.id)
+    await _ADMIN_BEFORE_USER_LANGUAGE(update, context)
+
+
+_TEXT_HANDLER_BEFORE_USER_LANGUAGE = text_handler
+
+
+async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user:
+        USER_LANGUAGE_CONTEXT.set(update.effective_user.id)
+    await _TEXT_HANDLER_BEFORE_USER_LANGUAGE(update, context)
+
+
+_CALLBACK_BEFORE_USER_LANGUAGE = callback_handler
+
+
+async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    user = query.from_user
+    user_id = user.id
+    USER_LANGUAGE_CONTEXT.set(user_id)
+    data = query.data or ""
+
+    if data == "user_language":
+        await query.answer()
+        await show_user_language_settings(query)
+        return
+
+    if data.startswith("user_set_language:"):
+        lang = data.split(":", 1)[1]
+        if lang not in SUPPORTED_LANGUAGES:
+            await query.answer("Unsupported language.", show_alert=True)
+            return
+        set_user_language(user_id, lang)
+        USER_LANGUAGE_CONTEXT.set(user_id)
+        await query.answer()
+        await edit_screen(
+            query,
+            user_id,
+            _user_language_saved(LANGUAGE_NAMES[lang]),
+            main_keyboard(),
+        )
+        return
+
+    # The old admin language control remains available and now also makes
+    # the admin's own interface follow the selected default immediately.
+    if data.startswith("set_language:") and is_admin(user):
+        lang = data.split(":", 1)[1]
+        if lang in SUPPORTED_LANGUAGES:
+            set_user_language(user_id, lang)
+
+    await _CALLBACK_BEFORE_USER_LANGUAGE(update, context)
 
 # Keep runtime entrypoint after the final overlays.
 
