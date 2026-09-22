@@ -174,9 +174,10 @@ def init_db():
             category TEXT NOT NULL DEFAULT '',
             currency TEXT NOT NULL,
             product TEXT NOT NULL,
+            amount TEXT NOT NULL DEFAULT '0',
             robux_amount INTEGER NOT NULL DEFAULT 0,
             price TEXT NOT NULL,
-            roblox_username TEXT NOT NULL,
+            roblox_username TEXT NOT NULL DEFAULT '',
             status TEXT NOT NULL DEFAULT 'awaiting_confirmation',
             created_at TEXT NOT NULL
         )
@@ -244,9 +245,9 @@ def init_db():
             VALUES (?, ?, ?, 1, ?)
             """,
             (
-                "Robux",
-                "💎 Robux",
-                "Choose a Robux amount to exchange.",
+                "Digital Currency",
+                "💱 Digital Currency",
+                "Choose the currency or asset you want to exchange.",
                 1,
             ),
         )
@@ -281,10 +282,10 @@ def init_db():
         ).fetchone()["id"]
 
         products = [
-            ("200 Robux", "200 Robux", 200, category_id, 1),
-            ("500 Robux", "500 Robux", 500, category_id, 2),
-            ("700 Robux", "700 Robux", 700, category_id, 3),
-            ("1,000 Robux", "1,000 Robux", 1000, category_id, 4),
+            ("100 Units", "100 Units", 100, category_id, 1),
+            ("250 Units", "250 Units", 250, category_id, 2),
+            ("500 Units", "500 Units", 500, category_id, 3),
+            ("1,000 Units", "1,000 Units", 1000, category_id, 4),
         ]
 
         cur.executemany(
@@ -344,20 +345,15 @@ def init_db():
         ),
         "custom": (
             "✏️ <b>CUSTOM AMOUNT</b>\n\n"
-            "Send the amount of Robux you want.\n\n"
+            "Send the amount you want to exchange.\n\n"
             "Example: <code>2500</code>"
-        ),
-        "username": (
-            "👤 <b>ROBLOX USERNAME</b>\n\n"
-            "Send your Roblox username."
         ),
         "how": (
             "ℹ️ <b>HOW IT WORKS</b>\n\n"
             "1️⃣ Choose a category.\n"
             "2️⃣ Choose a payment method.\n"
             "3️⃣ Choose an amount or enter a custom amount.\n"
-            "4️⃣ Send your Roblox username.\n"
-            "5️⃣ Your order is sent to the team and awaits confirmation."
+            "4️⃣ Your exchange is sent to the team and awaits confirmation."
         ),
         "confirmation": (
             "✅ <b>ORDER SENT</b>\n\n"
@@ -381,10 +377,6 @@ def init_db():
         "invalid_amount": (
             "⚠️ Please enter a valid amount between 1 and {max_custom_amount}."
         ),
-        "invalid_username": (
-            "⚠️ That doesn't look like a valid Roblox username.\n\n"
-            "Please try again."
-        ),
         "order_error": (
             "⚠️ <b>ORDER NOT CREATED</b>\n\n"
             "Something went wrong while creating your order. Please try again."
@@ -398,9 +390,9 @@ def init_db():
             "📦 Category: <b>{category}</b>\n"
             "💱 Payment method: <b>{currency}</b>\n"
             "📦 Product: <b>{product}</b>\n"
-            "💰 Amount: <b>{amount:,} Robux</b>\n"
+            "💰 Amount: <b>{amount:,} </b>\n"
             "💵 Price: <b>{price}</b>\n"
-            "👤 Roblox username: <code>{roblox_username}</code>\n"
+            "👤 account identifier: <code>{roblox_username}</code>\n"
             "📅 Created: <b>{created_at}</b>\n"
             "⏳ Status: <b>Awaiting confirmation</b>\n\n"
             "━━━━━━━━━━━━━━━━━━\n\n"
@@ -960,6 +952,17 @@ def render_text(key, **extra):
         # A malformed admin template should never crash the bot.
         return template
 
+
+
+def display_amount(value):
+    """Return a clean, currency-agnostic amount string."""
+    try:
+        x = Decimal(str(value))
+        if not x.is_finite():
+            return str(value)
+        return fmt_dec(x)
+    except (InvalidOperation, ValueError, TypeError):
+        return str(value)
 
 # ============================================================
 # CUSTOMER KEYBOARDS
@@ -1630,7 +1633,7 @@ async def show_edit_product(query, product_id):
         "📦 <b>EDIT PRODUCT</b>\n\n"
         f"🏷️ Name: <b>{clean(product['name'])}</b>\n"
         f"🔘 Button: <b>{clean(product['button_text'])}</b>\n"
-        f"🔢 Amount: <b>{product['amount']:,} Robux</b>\n"
+        f"🔢 Amount: <b>{fmt_dec(product['amount'])}</b>\n"
         f"🗂️ Category: <b>{clean(category['name']) if category else 'None'}</b>\n"
         f"📌 Status: <b>{status}</b>",
         product_admin_keyboard(product_id),
@@ -1645,7 +1648,7 @@ async def show_admin_currencies(query):
     rows = [
         [
             InlineKeyboardButton(
-                "➕ Add Payment Method",
+                "➕ Add Exchange Target",
                 callback_data="add_currency",
             )
         ]
@@ -1668,7 +1671,7 @@ async def show_admin_currencies(query):
         query,
         query.from_user.id,
         "💱 <b>PAYMENT METHODS</b>\n\n"
-        "Add, rename, reorder, enable or delete payment methods.",
+        "Add, rename, reorder, enable or delete exchange targets.",
         InlineKeyboardMarkup(rows),
     )
 
@@ -1873,14 +1876,12 @@ TEXT_NAMES = {
     "currency": "💱 Payment Method Step",
     "product": "📦 Product Step",
     "custom": "✏️ Custom Amount Step",
-    "username": "👤 Roblox Username Step",
     "how": "ℹ️ How It Works",
     "confirmation": "✅ Order Sent / Confirmation",
     "cancelled": "❌ Cancelled",
     "no_categories": "🗂️ No Categories",
     "no_products": "📦 No Products",
     "invalid_amount": "⚠️ Invalid Amount",
-    "invalid_username": "⚠️ Invalid Username",
     "order_error": "⚠️ Order Error",
     "no_session": "ℹ️ No Session",
     "admin_new_order": "🔔 Admin New Order",
@@ -2050,7 +2051,7 @@ async def start_add_category(query):
     await ask_text_input(
         query,
         "add_category_name",
-        "➕ <b>ADD CATEGORY</b>\n\nSend the category name.\n\nExample: <code>Robux</code>\n\n/cancel to stop.",
+        "➕ <b>ADD CATEGORY</b>\n\nSend the category name.\n\nExample: <code>TON</code>\n\n/cancel to stop.",
     )
 
 
@@ -2060,7 +2061,7 @@ async def start_add_product(query, category_id):
         "add_product_name",
         "➕ <b>ADD PRODUCT</b>\n\n"
         "Send the product name.\n\n"
-        "Example: <code>2,000 Robux</code>",
+        "Example: <code>2,000 units</code>",
         category_id=category_id,
     )
 
@@ -2430,7 +2431,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             query,
             "change_product_amount",
             "🔢 <b>CHANGE AMOUNT</b>\n\n"
-            "Send the new Robux amount.\n"
+            "Send the new amount.\n"
             "Example: <code>2500</code>",
             product_id=int(data.split(":", 1)[1]),
         )
@@ -2838,7 +2839,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             query,
             "change_max_amount",
             "🔢 <b>MAX CUSTOM AMOUNT</b>\n\n"
-            "Send the maximum allowed custom Robux amount.\n"
+            "Send the maximum allowed custom amount.\n"
             "Example: <code>1000000</code>",
         )
         return
@@ -2937,7 +2938,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             rows.append(
                 [
                     InlineKeyboardButton(
-                        f"{status_icon} {order['order_number']} · {order['roblox_username']}",
+                        f"{status_icon} {order['order_number']} · {clean(order['product'])}",
                         callback_data=f"order:{order['order_number']}",
                     )
                 ]
@@ -2967,12 +2968,11 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_id,
             "🔔 <b>ORDER DETAILS</b>\n\n"
             f"🔐 Code: <code>{clean(order['order_number'])}</code>\n"
-            f"🗂️ Category: <b>{clean(order['category'])}</b>\n"
-            f"💱 Payment: <b>{clean(order['currency'])}</b>\n"
-            f"📦 Product: <b>{clean(order['product'])}</b>\n"
-            f"💰 Amount: <b>{order['robux_amount']:,} Robux</b>\n"
+            f"📤 From: <b>{clean(order['category'])}</b>\n"
+            f"📥 To: <b>{clean(order['currency'])}</b>\n"
+            f"📦 Exchange: <b>{clean(order['product'])}</b>\n"
+            f"💰 Amount: <b>{clean(order['amount'] if 'amount' in order.keys() else order['robux_amount'])}</b>\n"
             f"💵 Price: <b>{clean(order['price'])}</b>\n"
-            f"👤 Roblox: <code>{clean(order['roblox_username'])}</code>\n"
             f"👤 Customer: <b>{clean(order['telegram_name'])}</b>\n"
             f"📱 Telegram: <b>{clean('@' + order['telegram_username']) if order['telegram_username'] else 'No username'}</b>\n"
             f"🆔 Chat ID: <code>{order['telegram_id']}</code>\n"
@@ -3232,7 +3232,7 @@ async def handle_admin_input(
             update.effective_chat.id,
             user_id,
             "🔢 <b>PRODUCT AMOUNT</b>\n\n"
-            "Send the amount of Robux.\n"
+            "Send the product amount.\n"
             "Example: <code>2000</code>",
         )
         return
@@ -3307,7 +3307,7 @@ async def handle_admin_input(
             user_id,
             "✅ <b>PRODUCT CREATED</b>\n\n"
             f"📦 {clean(session['product_name'])}\n"
-            f"🔢 {amount:,} Robux",
+            f"🔢 {fmt_dec(amount)} units",
             InlineKeyboardMarkup(
                 [
                     [
@@ -3405,7 +3405,7 @@ async def handle_admin_input(
             update.effective_chat.id,
             user_id,
             f"✅ <b>AMOUNT UPDATED</b>\n\n"
-            f"New amount: <b>{amount:,} Robux</b>",
+            f"New amount: <b>{fmt_dec(amount)} units</b>",
             InlineKeyboardMarkup(
                 [[
                     InlineKeyboardButton(
@@ -4228,10 +4228,10 @@ def init_db():
     row = conn.execute("SELECT value FROM texts WHERE key='currency'").fetchone()
     if row and row["value"] == old_currency:
         conn.execute("UPDATE texts SET value=? WHERE key='currency'", ("🔄 <b>WHAT ARE YOU EXCHANGING FOR?</b>\n\nChoose what you want in return.",))
-    old_how = "ℹ️ <b>HOW IT WORKS</b>\n\n1️⃣ Choose a category.\n2️⃣ Choose a payment method.\n3️⃣ Choose an amount or enter a custom amount.\n4️⃣ Send your Roblox username.\n5️⃣ Your order is sent to the team and awaits confirmation."
+    old_how = "ℹ️ <b>HOW IT WORKS</b>\n\n1️⃣ Choose a category.\n2️⃣ Choose a payment method.\n3️⃣ Choose an amount or enter a custom amount.\n4️⃣ Send your account identifier.\n5️⃣ Your order is sent to the team and awaits confirmation."
     row = conn.execute("SELECT value FROM texts WHERE key='how'").fetchone()
     if row and row["value"] == old_how:
-        conn.execute("UPDATE texts SET value=? WHERE key='how'", ("ℹ️ <b>HOW IT WORKS</b>\n\n1️⃣ Choose what you are exchanging.\n2️⃣ Choose what you are exchanging for.\n3️⃣ Choose an amount.\n4️⃣ Send your Roblox username.\n5️⃣ Your exchange is sent and awaits confirmation.\n\n🤝 P2P offers use a separate market.",))
+        conn.execute("UPDATE texts SET value=? WHERE key='how'", ("ℹ️ <b>HOW IT WORKS</b>\n\n1️⃣ Choose what you are exchanging.\n2️⃣ Choose what you are exchanging for.\n3️⃣ Choose an amount.\n4️⃣ Your exchange is sent and awaits confirmation.\n\n🤝 P2P offers use a separate market.",))
     texts = {
         "p2p_market": "🤝 <b>P2P MARKET</b>\n\nBuy an existing offer or publish your own.\n\nSeller identities are hidden from buyers.",
         "p2p_offer_amount": "💰 <b>OFFER AMOUNT</b>\n\nSend the amount you are offering.\nExample: <code>2500</code>",
@@ -5315,8 +5315,20 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if prod_mode(pid)==MODE_P2P:
             await show_p2p_product_menu(query,pid); return
         price=get_price(session["currency_id"],pid)
-        session.update({"product_id":pid,"product":p["name"],"amount":p["amount"],"price":price,"waiting":"username","flow":"classic"})
-        await edit_screen(query,user_id,render_text("username"),cancel_keyboard()); return
+        session.update({"product_id":pid,"product":p["name"],"amount":p["amount"],"price":price,"waiting":None,"flow":"classic"})
+        try:
+            result=await create_generic_order(update,context,session)
+        except Exception:
+            logger.exception("Classic order creation failed")
+            result=None
+        if not result:
+            sessions.pop(user_id,None)
+            await edit_screen(query,user_id,render_text("order_error"),main_keyboard()); return
+        sessions.pop(user_id,None)
+        await edit_screen(query,user_id,render_text("confirmation",order_number=result["order_number"]),InlineKeyboardMarkup([
+            [InlineKeyboardButton(get_button("new_order","🔄 New Exchange"),callback_data="exchange")],
+            [InlineKeyboardButton(get_button("home","🏠 Main Menu"),callback_data="home")]
+        ])); return
     if data == "custom":
         session=sessions.get(user_id,{})
         if not session.get("currency_id") or session.get("flow")!="classic":
@@ -5559,7 +5571,7 @@ async def start_add_product_context(query,category_id,subcategory_id=None):
     start_admin_action(query.from_user.id,"add_product_name",category_id=category_id,subcategory_id=subcategory_id)
     parent="subcategory" if subcategory_id else "category"
     await edit_screen(query,query.from_user.id,
-        "➕ <b>ADD PRODUCT</b>\n\nSend the product name.\nExample: <code>2,000 Robux</code>\n\n"
+        "➕ <b>ADD PRODUCT</b>\n\nSend the product name.\nExample: <code>2,000 units</code>\n\n"
         f"Parent: <b>{parent}</b>")
 
 
@@ -5586,7 +5598,7 @@ async def show_edit_product(query,product_id):
         "📦 <b>EDIT PRODUCT</b>\n\n"
         f"🏷️ Name: <b>{clean(p['name'])}</b>\n"
         f"🔘 Button: <b>{clean(p['button_text'])}</b>\n"
-        f"🔢 Amount: <b>{p['amount']:,} Robux</b>\n"
+        f"🔢 Amount: <b>{p['amount']:,} </b>\n"
         f"🗂️ Category: <b>{clean(c['name']) if c else 'None'}</b>\n"
         f"📁 Subcategory: <b>{clean(s['name']) if s else 'Root'}</b>\n"
         f"🔄 Mode: <b>{mode_label(p['mode'])}</b>\n"
@@ -5637,7 +5649,7 @@ async def handle_admin_input(update,context,session,text):
     if action in {"add_product_name","add_product_amount"} and "subcategory_id" in session:
         if action=="add_product_name":
             session["product_name"]=text; session["action"]="add_product_amount"
-            await remember_screen(context.bot,update.effective_chat.id,uid,"🔢 <b>PRODUCT AMOUNT</b>\n\nSend the amount of Robux.\nExample: <code>2000</code>"); return
+            await remember_screen(context.bot,update.effective_chat.id,uid,"🔢 <b>PRODUCT AMOUNT</b>\n\nSend the product amount.\nExample: <code>2000</code>"); return
         cleaned=text.replace(",","").replace(" ","")
         if not cleaned.isdigit() or int(cleaned)<=0:
             await remember_screen(context.bot,update.effective_chat.id,uid,"⚠️ Enter a positive whole number."); return
@@ -5725,23 +5737,24 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         fee=fee_for(session["p2p_source_amount"],str(val))["amount"]; total=val+fee
         await remember_screen(context.bot,update.effective_chat.id,uid,render_text("p2p_preview",product=session["product"],source_amount=f"{session['p2p_source_amount']:,}",target_amount=fmt_dec(val),target_name=session["p2p_target_name"],fee_amount=fmt_dec(fee),buyer_total=fmt_dec(total)),InlineKeyboardMarkup([[InlineKeyboardButton("✅ Publish Offer",callback_data="p2p_publish_confirm")],[InlineKeyboardButton(get_button("cancel","❌ Cancel"),callback_data="p2p_market")]])); return
 
-    # Classic custom amount and username are kept compatible with the old shop.
+    # Classic custom amount now creates the order immediately; no external account step is required.
     if waiting=="custom_amount" and session.get("flow")=="classic":
         cleaned=text.replace(",","").replace(" ","")
-        max_amount=int(get_setting("max_custom_amount","1000000"))
-        if not cleaned.isdigit() or int(cleaned)<=0 or int(cleaned)>max_amount:
-            await remember_screen(context.bot,update.effective_chat.id,uid,render_text("invalid_amount",max_custom_amount=max_amount),cancel_keyboard()); return
-        session["amount"]=int(cleaned); session["product"]="Custom Amount"; session["price"]=get_custom_price(session["currency_id"]); session["waiting"]="username"
-        await remember_screen(context.bot,update.effective_chat.id,uid,render_text("username"),cancel_keyboard()); return
-    if waiting=="username" and session.get("flow")=="classic":
-        username=text.lstrip("@")
-        if len(username)<3 or len(username)>20 or not all(c.isalnum() or c=="_" for c in username):
-            await remember_screen(context.bot,update.effective_chat.id,uid,render_text("invalid_username"),cancel_keyboard()); return
+        value=dec(cleaned)
+        max_amount=dec(get_setting("max_custom_amount","1000000"))
+        if value<=0 or value>max_amount:
+            await remember_screen(context.bot,update.effective_chat.id,uid,render_text("invalid_amount",max_custom_amount=display_amount(max_amount)),cancel_keyboard()); return
+        session["amount"]=display_amount(value)
+        session["product"]="Custom Amount"
+        session["price"]=get_custom_price(session["currency_id"])
+        session["waiting"]=None
         try:
-            result=await create_order(update,context,session,username)
+            result=await create_generic_order(update,context,session)
         except Exception:
-            logger.exception("Classic order creation failed"); result=None
+            logger.exception("Classic custom order creation failed")
+            result=None
         if not result:
+            sessions.pop(uid,None)
             await remember_screen(context.bot,update.effective_chat.id,uid,render_text("order_error"),main_keyboard()); return
         sessions.pop(uid,None)
         await remember_screen(context.bot,update.effective_chat.id,uid,render_text("confirmation",order_number=result["order_number"]),InlineKeyboardMarkup([[InlineKeyboardButton(get_button("new_order","🔄 New Exchange"),callback_data="exchange")],[InlineKeyboardButton(get_button("home","🏠 Main Menu"),callback_data="home")]])); return
@@ -6066,6 +6079,75 @@ async def buy_p2p_offer(query,context,offer_id):
         await context.bot.send_message(chat_id=offer["seller_id"],text=render_text("p2p_seller_notice",offer_number=offer["offer_number"],trade_number=trade_code),parse_mode="HTML")
     except Exception as error: logger.warning("P2P seller notice failed: %s",error)
 
+
+# ============================================================
+# GENERIC CLASSIC ORDER CREATOR
+# ============================================================
+
+async def create_generic_order(update, context, session):
+    user = update.effective_user
+    user_id = user.id
+
+    currency = get_currency(session.get("currency_id"))
+    category = get_category(session.get("category_id"))
+    if not currency or not category:
+        return None
+
+    order_number = generate_order_number()
+    created_at = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+    telegram_username = user.username or ""
+    telegram_name = user.full_name or ""
+    amount = display_amount(session.get("amount", "0"))
+
+    conn = db()
+    conn.execute(
+        """
+        INSERT INTO orders
+        (
+            order_number, telegram_id, telegram_username, telegram_name,
+            category, currency, product, amount, robux_amount, price,
+            roblox_username, status, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, '', ?, ?)
+        """,
+        (
+            order_number, user_id, telegram_username, telegram_name,
+            category["name"], currency["name"],
+            session.get("product", "Exchange"), amount, session.get("price", "NA"),
+            "awaiting_confirmation", created_at,
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+    recipient = get_setting("order_recipient_chat_id", "").strip() or BOOTSTRAP_ADMIN_CHAT_ID
+    if recipient:
+        try:
+            admin_text = render_text(
+                "admin_new_order",
+                order_number=order_number,
+                category=category["name"],
+                currency=currency["name"],
+                product=session.get("product", "Exchange"),
+                amount=amount,
+                price=session.get("price", "NA"),
+                created_at=created_at,
+                customer_name=telegram_name,
+                customer_username=(f"@{telegram_username}" if telegram_username else "No username"),
+                telegram_id=user_id,
+            )
+            await context.bot.send_message(chat_id=int(recipient), text=admin_text, parse_mode="HTML")
+            return {"order_number": order_number, "admin_notified": True, "admin_error": ""}
+        except (TelegramError, ValueError) as error:
+            logger.error("Admin notification failed for order %s: %s", order_number, error)
+            return {"order_number": order_number, "admin_notified": False, "admin_error": str(error)}
+
+    return {
+        "order_number": order_number,
+        "admin_notified": False,
+        "admin_error": "No order recipient chat ID is configured.",
+    }
+
 # ============================================================
 # FINAL HIERARCHY SAFETY / MOVE OVERRIDES
 # ============================================================
@@ -6313,15 +6395,13 @@ TRANSLATED_TEXTS = {
         "category": "🗂️ <b>WHAT ARE YOU EXCHANGING?</b>\n\nChoose what you want to exchange.",
         "currency": "🎯 <b>WHAT ARE YOU EXCHANGING FOR?</b>\n\nChoose what you want in return.",
         "product": "📦 <b>CHOOSE THE EXCHANGE</b>\n\nChoose the amount you want to exchange.",
-        "custom": "✏️ <b>CUSTOM AMOUNT</b>\n\nSend the amount of Robux you want.\n\nExample: <code>2500</code>",
-        "username": "👤 <b>ROBLOX USERNAME</b>\n\nSend your Roblox username.",
-        "how": "ℹ️ <b>HOW IT WORKS</b>\n\n1️⃣ Choose what you are exchanging.\n2️⃣ Choose what you are exchanging for.\n3️⃣ Choose an amount.\n4️⃣ Send your Roblox username.\n5️⃣ Your exchange is sent and awaits confirmation.\n\n🤝 P2P offers use a separate market.",
+        "custom": "✏️ <b>CUSTOM AMOUNT</b>\n\nSend the amount you want to exchange.\n\nExample: <code>2500</code>",
+        "how": "ℹ️ <b>HOW IT WORKS</b>\n\n1️⃣ Choose what you are exchanging.\n2️⃣ Choose what you are exchanging for.\n3️⃣ Choose an amount.\n4️⃣ Your exchange is sent and awaits confirmation.\n\n🤝 P2P offers use a separate market.",
         "confirmation": "✅ <b>ORDER SENT</b>\n\n🔐 Order code: <code>{order_number}</code>\n\nYour order has been sent and is now <b>awaiting confirmation</b>.\n\nFor your security, only trust a message that references this exact order code.\n\n<b>{shop_name}</b> will contact you here when your order is confirmed.",
         "cancelled": "❌ <b>CANCELLED</b>\n\nYour current action has been cancelled.",
         "no_categories": "🗂️ <b>NO CATEGORIES AVAILABLE</b>\n\nThere are currently no exchange categories available.",
         "no_products": "📦 <b>NO PRODUCTS AVAILABLE</b>\n\nThere are currently no products in this category.",
         "invalid_amount": "⚠️ Please enter a valid amount between 1 and {max_custom_amount}.",
-        "invalid_username": "⚠️ That doesn't look like a valid Roblox username.\n\nPlease try again.",
         "order_error": "⚠️ <b>ORDER NOT CREATED</b>\n\nSomething went wrong while creating your order. Please try again.",
         "no_session": "Please open the shop again with /start.",
         "p2p_market": "🤝 <b>P2P MARKET</b>\n\nBuy an existing offer or publish your own.\n\nSeller identities are hidden from buyers.",
@@ -6337,7 +6417,7 @@ TRANSLATED_TEXTS = {
         "p2p_seller_notice": "🔔 <b>P2P OFFER SELECTED</b>\n\nOffer: <code>{offer_number}</code>\nTrade: <code>{trade_number}</code>\n\nA buyer selected your offer. Please wait for confirmation.",
         "p2p_my_offers": "📋 <b>MY P2P OFFERS</b>\n\nYour offers are shown below.",
         "p2p_cancelled": "✅ <b>OFFER CANCELLED</b>\n\nThe offer is no longer available.",
-        "admin_new_order": "🔔 <b>NEW ORDER</b>\n\n🔐 Security code: <code>{order_number}</code>\n📦 Category: <b>{category}</b>\n🎯 Exchange target: <b>{currency}</b>\n📦 Product: <b>{product}</b>\n💰 Amount: <b>{amount:,} Robux</b>\n💵 Price: <b>{price}</b>\n👤 Roblox username: <code>{roblox_username}</code>\n📅 Created: <b>{created_at}</b>\n⏳ Status: <b>Awaiting confirmation</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Customer: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
+        "admin_new_order": "🔔 <b>NEW ORDER</b>\n\n🔐 Security code: <code>{order_number}</code>\n📤 From: <b>{category}</b>\n📥 To: <b>{currency}</b>\n📦 Exchange: <b>{product}</b>\n💰 Amount: <b>{amount}</b>\n💵 Price: <b>{price}</b>\n📅 Created: <b>{created_at}</b>\n⏳ Status: <b>Awaiting confirmation</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Customer: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
         "admin_no_recipient": "⚠️ <b>ORDER SAVED — ADMIN NOTIFIED FAILED</b>\n\nOrder <code>{order_number}</code> is stored, but the configured admin chat could not be reached.\n\nReason: <code>{error}</code>",
     },
     "ru": {
@@ -6345,15 +6425,13 @@ TRANSLATED_TEXTS = {
         "category": "🗂️ <b>ЧТО ВЫ ОБМЕНИВАЕТЕ?</b>\n\nВыберите, что хотите обменять.",
         "currency": "🎯 <b>НА ЧТО ВЫ ОБМЕНИВАЕТЕ?</b>\n\nВыберите, что хотите получить взамен.",
         "product": "📦 <b>ВЫБЕРИТЕ ОБМЕН</b>\n\nВыберите количество для обмена.",
-        "custom": "✏️ <b>СВОЁ КОЛИЧЕСТВО</b>\n\nОтправьте нужное количество Robux.\n\nПример: <code>2500</code>",
-        "username": "👤 <b>ИМЯ ПОЛЬЗОВАТЕЛЯ ROBLOX</b>\n\nОтправьте свой Roblox username.",
-        "how": "ℹ️ <b>КАК ЭТО РАБОТАЕТ</b>\n\n1️⃣ Выберите, что отдаёте.\n2️⃣ Выберите, что хотите получить.\n3️⃣ Выберите количество.\n4️⃣ Отправьте Roblox username.\n5️⃣ Обмен будет отправлен и будет ожидать подтверждения.\n\n🤝 Для P2P используется отдельный маркет.",
+        "custom": "✏️ <b>СВОЁ КОЛИЧЕСТВО</b>\n\nОтправьте количество, которое хотите обменять.\n\nПример: <code>2500</code>",
+        "how": "ℹ️ <b>КАК ЭТО РАБОТАЕТ</b>\n\n1️⃣ Выберите, что отдаёте.\n2️⃣ Выберите, что хотите получить.\n3️⃣ Выберите количество.\n4️⃣ Обмен будет отправлен и будет ожидать подтверждения.\n\n🤝 Для P2P используется отдельный маркет.",
         "confirmation": "✅ <b>ЗАКАЗ ОТПРАВЛЕН</b>\n\n🔐 Код заказа: <code>{order_number}</code>\n\nВаш заказ отправлен и сейчас <b>ожидает подтверждения</b>.\n\nДля безопасности доверяйте только сообщениям с этим точным кодом.\n\n<b>{shop_name}</b> свяжется с вами здесь после подтверждения заказа.",
         "cancelled": "❌ <b>ОТМЕНЕНО</b>\n\nТекущее действие отменено.",
         "no_categories": "🗂️ <b>КАТЕГОРИЙ НЕТ</b>\n\nСейчас нет доступных категорий обмена.",
         "no_products": "📦 <b>ТОВАРОВ НЕТ</b>\n\nВ этой категории сейчас нет доступных вариантов.",
         "invalid_amount": "⚠️ Введите корректное количество от 1 до {max_custom_amount}.",
-        "invalid_username": "⚠️ Похоже, это неверный Roblox username.\n\nПопробуйте ещё раз.",
         "order_error": "⚠️ <b>ЗАКАЗ НЕ СОЗДАН</b>\n\nПроизошла ошибка при создании заказа. Попробуйте ещё раз.",
         "no_session": "Откройте магазин снова через /start.",
         "p2p_market": "🤝 <b>P2P МАРКЕТ</b>\n\nКупите готовое предложение или опубликуйте своё.\n\nЛичность продавца скрыта от покупателей.",
@@ -6369,7 +6447,7 @@ TRANSLATED_TEXTS = {
         "p2p_seller_notice": "🔔 <b>P2P ПРЕДЛОЖЕНИЕ ВЫБРАНО</b>\n\nПредложение: <code>{offer_number}</code>\nСделка: <code>{trade_number}</code>\n\nПокупатель выбрал ваше предложение. Ожидайте подтверждения.",
         "p2p_my_offers": "📋 <b>МОИ P2P ПРЕДЛОЖЕНИЯ</b>\n\nВаши предложения показаны ниже.",
         "p2p_cancelled": "✅ <b>ПРЕДЛОЖЕНИЕ ОТМЕНЕНО</b>\n\nПредложение больше недоступно.",
-        "admin_new_order": "🔔 <b>НОВЫЙ ЗАКАЗ</b>\n\n🔐 Код: <code>{order_number}</code>\n📦 Категория: <b>{category}</b>\n🎯 Цель обмена: <b>{currency}</b>\n📦 Товар: <b>{product}</b>\n💰 Количество: <b>{amount:,} Robux</b>\n💵 Цена: <b>{price}</b>\n👤 Roblox username: <code>{roblox_username}</code>\n📅 Создан: <b>{created_at}</b>\n⏳ Статус: <b>Ожидает подтверждения</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Клиент: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
+        "admin_new_order": "🔔 <b>НОВЫЙ ЗАКАЗ</b>\n\n🔐 Код: <code>{order_number}</code>\n📤 Отдаёте: <b>{category}</b>\n📥 Получаете: <b>{currency}</b>\n📦 Обмен: <b>{product}</b>\n💰 Количество: <b>{amount}</b>\n💵 Цена: <b>{price}</b>\n📅 Создано: <b>{created_at}</b>\n⏳ Статус: <b>Ожидает подтверждения</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Клиент: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
         "admin_no_recipient": "⚠️ <b>ЗАКАЗ СОХРАНЁН — АДМИНИСТРАТОР НЕ УВЕДОМЛЁН</b>\n\nЗаказ <code>{order_number}</code> сохранён, но чат администратора недоступен.\n\nПричина: <code>{error}</code>",
     },
     "uk": {
@@ -6377,15 +6455,13 @@ TRANSLATED_TEXTS = {
         "category": "🗂️ <b>ЩО ВИ ОБМІНЮЄТЕ?</b>\n\nОберіть, що хочете обміняти.",
         "currency": "🎯 <b>НА ЩО ВИ ОБМІНЮЄТЕ?</b>\n\nОберіть, що хочете отримати натомість.",
         "product": "📦 <b>ОБЕРІТЬ ОБМІН</b>\n\nОберіть кількість для обміну.",
-        "custom": "✏️ <b>ВЛАСНА КІЛЬКІСТЬ</b>\n\nНадішліть потрібну кількість Robux.\n\nПриклад: <code>2500</code>",
-        "username": "👤 <b>ІМ'Я КОРИСТУВАЧА ROBLOX</b>\n\nНадішліть свій Roblox username.",
-        "how": "ℹ️ <b>ЯК ЦЕ ПРАЦЮЄ</b>\n\n1️⃣ Оберіть, що віддаєте.\n2️⃣ Оберіть, що хочете отримати.\n3️⃣ Оберіть кількість.\n4️⃣ Надішліть Roblox username.\n5️⃣ Обмін буде відправлено та він чекатиме підтвердження.\n\n🤝 Для P2P використовується окремий маркет.",
+        "custom": "✏️ <b>ВЛАСНА КІЛЬКІСТЬ</b>\n\nНадішліть кількість, яку хочете обміняти.\n\nПриклад: <code>2500</code>",
+        "how": "ℹ️ <b>ЯК ЦЕ ПРАЦЮЄ</b>\n\n1️⃣ Оберіть, що віддаєте.\n2️⃣ Оберіть, що хочете отримати.\n3️⃣ Оберіть кількість.\n4️⃣ Обмін буде відправлено та він чекатиме підтвердження.\n\n🤝 Для P2P використовується окремий маркет.",
         "confirmation": "✅ <b>ЗАМОВЛЕННЯ НАДІСЛАНО</b>\n\n🔐 Код замовлення: <code>{order_number}</code>\n\nВаше замовлення надіслано і зараз <b>очікує підтвердження</b>.\n\nДля безпеки довіряйте лише повідомленням із цим точним кодом.\n\n<b>{shop_name}</b> зв'яжеться з вами після підтвердження замовлення.",
         "cancelled": "❌ <b>СКАСОВАНО</b>\n\nПоточну дію скасовано.",
         "no_categories": "🗂️ <b>КАТЕГОРІЙ НЕМАЄ</b>\n\nЗараз немає доступних категорій обміну.",
         "no_products": "📦 <b>ТОВАРІВ НЕМАЄ</b>\n\nУ цій категорії зараз немає доступних варіантів.",
         "invalid_amount": "⚠️ Введіть коректну кількість від 1 до {max_custom_amount}.",
-        "invalid_username": "⚠️ Схоже, це неправильний Roblox username.\n\nСпробуйте ще раз.",
         "order_error": "⚠️ <b>ЗАМОВЛЕННЯ НЕ СТВОРЕНО</b>\n\nПід час створення сталася помилка. Спробуйте ще раз.",
         "no_session": "Відкрийте магазин знову через /start.",
         "p2p_market": "🤝 <b>P2P МАРКЕТ</b>\n\nКупіть готову пропозицію або опублікуйте свою.\n\nОсобу продавця приховано від покупців.",
@@ -6401,7 +6477,7 @@ TRANSLATED_TEXTS = {
         "p2p_seller_notice": "🔔 <b>P2P ПРОПОЗИЦІЮ ОБРАНО</b>\n\nПропозиція: <code>{offer_number}</code>\nУгода: <code>{trade_number}</code>\n\nПокупець обрав вашу пропозицію. Очікуйте підтвердження.",
         "p2p_my_offers": "📋 <b>МОЇ P2P ПРОПОЗИЦІЇ</b>\n\nВаші пропозиції показано нижче.",
         "p2p_cancelled": "✅ <b>ПРОПОЗИЦІЮ СКАСОВАНО</b>\n\nПропозиція більше недоступна.",
-        "admin_new_order": "🔔 <b>НОВЕ ЗАМОВЛЕННЯ</b>\n\n🔐 Код: <code>{order_number}</code>\n📦 Категорія: <b>{category}</b>\n🎯 Ціль обміну: <b>{currency}</b>\n📦 Товар: <b>{product}</b>\n💰 Кількість: <b>{amount:,} Robux</b>\n💵 Ціна: <b>{price}</b>\n👤 Roblox username: <code>{roblox_username}</code>\n📅 Створено: <b>{created_at}</b>\n⏳ Статус: <b>Очікує підтвердження</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Клієнт: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
+        "admin_new_order": "🔔 <b>НОВЕ ЗАМОВЛЕННЯ</b>\n\n🔐 Код: <code>{order_number}</code>\n📤 Віддаєте: <b>{category}</b>\n📥 Отримуєте: <b>{currency}</b>\n📦 Обмін: <b>{product}</b>\n💰 Кількість: <b>{amount}</b>\n💵 Ціна: <b>{price}</b>\n📅 Створено: <b>{created_at}</b>\n⏳ Статус: <b>Очікує підтвердження</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Клієнт: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
         "admin_no_recipient": "⚠️ <b>ЗАМОВЛЕННЯ ЗБЕРЕЖЕНО — АДМІНІСТРАТОРА НЕ ПОВІДОМЛЕНО</b>\n\nЗамовлення <code>{order_number}</code> збережено, але чат адміністратора недоступний.\n\nПричина: <code>{error}</code>",
     },
     "kk": {
@@ -6409,15 +6485,13 @@ TRANSLATED_TEXTS = {
         "category": "🗂️ <b>НЕНІ АЙЫРБАСТАЙСЫЗ?</b>\n\nАйырбастағыңыз келетін нәрсені таңдаңыз.",
         "currency": "🎯 <b>НЕГЕ АЙЫРБАСТАЙСЫЗ?</b>\n\nОрнына алғыңыз келетін нәрсені таңдаңыз.",
         "product": "📦 <b>АЙЫРБАС НҰСҚАСЫН ТАҢДАҢЫЗ</b>\n\nАйырбастайтын мөлшерді таңдаңыз.",
-        "custom": "✏️ <b>ЖЕКЕ МӨЛШЕР</b>\n\nҚалаған Robux мөлшерін жіберіңіз.\n\nМысал: <code>2500</code>",
-        "username": "👤 <b>ROBLOX ПАЙДАЛАНУШЫ АТЫ</b>\n\nRoblox username-іңізді жіберіңіз.",
-        "how": "ℹ️ <b>ҚАЛАЙ ЖҰМЫС ІСТЕЙДІ</b>\n\n1️⃣ Нені беретіндігіңізді таңдаңыз.\n2️⃣ Не алғыңыз келетінін таңдаңыз.\n3️⃣ Мөлшерді таңдаңыз.\n4️⃣ Roblox username жіберіңіз.\n5️⃣ Айырбас жіберіліп, растауды күтеді.\n\n🤝 P2P үшін бөлек маркет қолданылады.",
+        "custom": "✏️ <b>ЖЕКЕ МӨЛШЕР</b>\n\nАйырбастағыңыз келетін мөлшерді жіберіңіз.\n\nМысал: <code>2500</code>",
+        "how": "ℹ️ <b>ҚАЛАЙ ЖҰМЫС ІСТЕЙДІ</b>\n\n1️⃣ Нені беретіндігіңізді таңдаңыз.\n2️⃣ Не алғыңыз келетінін таңдаңыз.\n3️⃣ Мөлшерді таңдаңыз.\n4️⃣ Айырбас жіберіліп, растауды күтеді.\n\n🤝 P2P үшін бөлек маркет қолданылады.",
         "confirmation": "✅ <b>ТАПСЫРЫС ЖІБЕРІЛДІ</b>\n\n🔐 Тапсырыс коды: <code>{order_number}</code>\n\nТапсырысыңыз жіберілді және қазір <b>растауды күтуде</b>.\n\nҚауіпсіздік үшін тек осы дәл код көрсетілген хабарламаға сеніңіз.\n\n<b>{shop_name}</b> тапсырыс расталғаннан кейін сізбен осы жерде байланысады.",
         "cancelled": "❌ <b>БОЛДЫРЫЛДЫ</b>\n\nАғымдағы әрекет тоқтатылды.",
         "no_categories": "🗂️ <b>САНАТТАР ЖОҚ</b>\n\nҚазір айырбас санаттары қолжетімсіз.",
         "no_products": "📦 <b>ӨНІМДЕР ЖОҚ</b>\n\nБұл санатта қазір қолжетімді нұсқалар жоқ.",
         "invalid_amount": "⚠️ 1 мен {max_custom_amount} аралығында дұрыс мөлшер енгізіңіз.",
-        "invalid_username": "⚠️ Бұл Roblox username дұрыс емес сияқты.\n\nҚайта көріңіз.",
         "order_error": "⚠️ <b>ТАПСЫРЫС ҚҰРЫЛМАДЫ</b>\n\nТапсырысты жасау кезінде қате болды. Қайта көріңіз.",
         "no_session": "Дүкенді /start арқылы қайта ашыңыз.",
         "p2p_market": "🤝 <b>P2P МАРКЕТ</b>\n\nДайын ұсынысты сатып алыңыз немесе өз ұсынысыңызды жариялаңыз.\n\nСатушының кім екені сатып алушыдан жасырылған.",
@@ -6433,7 +6507,7 @@ TRANSLATED_TEXTS = {
         "p2p_seller_notice": "🔔 <b>P2P ҰСЫНЫС ТАҢДАЛДЫ</b>\n\nҰсыныс: <code>{offer_number}</code>\nМәміле: <code>{trade_number}</code>\n\nСатып алушы сіздің ұсынысыңызды таңдады. Растауды күтіңіз.",
         "p2p_my_offers": "📋 <b>МЕНІҢ P2P ҰСЫНЫСТАРЫМ</b>\n\nҰсыныстарыңыз төменде көрсетілген.",
         "p2p_cancelled": "✅ <b>ҰСЫНЫС БОЛДЫРЫЛДЫ</b>\n\nҰсыныс енді қолжетімсіз.",
-        "admin_new_order": "🔔 <b>ЖАҢА ТАПСЫРЫС</b>\n\n🔐 Код: <code>{order_number}</code>\n📦 Санат: <b>{category}</b>\n🎯 Айырбас мақсаты: <b>{currency}</b>\n📦 Өнім: <b>{product}</b>\n💰 Мөлшер: <b>{amount:,} Robux</b>\n💵 Баға: <b>{price}</b>\n👤 Roblox username: <code>{roblox_username}</code>\n📅 Құрылған: <b>{created_at}</b>\n⏳ Күйі: <b>Растауды күтуде</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Клиент: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
+        "admin_new_order": "🔔 <b>ЖАҢА ТАПСЫРЫС</b>\n\n🔐 Код: <code>{order_number}</code>\n📤 Бересіз: <b>{category}</b>\n📥 Аласыз: <b>{currency}</b>\n📦 Айырбас: <b>{product}</b>\n💰 Мөлшер: <b>{amount}</b>\n💵 Баға: <b>{price}</b>\n📅 Құрылған: <b>{created_at}</b>\n⏳ Күйі: <b>Растауды күтуде</b>\n\n━━━━━━━━━━━━━━━━━━\n\n👤 Клиент: <b>{customer_name}</b>\n📱 Telegram: <b>{customer_username}</b>\n🆔 Chat ID: <code>{telegram_id}</code>",
         "admin_no_recipient": "⚠️ <b>ТАПСЫРЫС САҚТАЛДЫ — ӘКІМШІГЕ ХАБАРЛАНБАДЫ</b>\n\n<code>{order_number}</code> тапсырысы сақталды, бірақ әкімші чатына жету мүмкін болмады.\n\nСебебі: <code>{error}</code>",
     },
 }
@@ -6701,6 +6775,65 @@ def init_db():
     conn.close()
     _ensure_localized_tables()
 
+
+
+# Final generic-order database migration. Existing legacy order data is kept
+# intact, but all new orders use the generic amount field.
+_GENERIC_ORDER_INIT_BEFORE = init_db
+
+def init_db():
+    _GENERIC_ORDER_INIT_BEFORE()
+    conn = db()
+    ensure_column(conn, "orders", "amount", "TEXT NOT NULL DEFAULT '0'")
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(orders)").fetchall()}
+    if "robux_amount" in columns:
+        conn.execute(
+            "UPDATE orders SET amount = CAST(robux_amount AS TEXT) "
+            "WHERE amount IS NULL OR amount = '' OR amount = '0'"
+        )
+
+    # Remove obsolete platform-specific customer text from older databases.
+    # Only replace values that still contain the old terms, so custom wording
+    # that is already generic is left untouched.
+    legacy_pairs = ("Robux", "Roblox", "ROBLOX")
+    for lang in SUPPORTED_LANGUAGES:
+        row = conn.execute(
+            "SELECT value FROM localized_texts WHERE language=? AND key='custom'",
+            (lang,),
+        ).fetchone()
+        if row and any(term in row["value"] for term in legacy_pairs):
+            conn.execute(
+                "UPDATE localized_texts SET value=? WHERE language=? AND key='custom'",
+                (TRANSLATED_TEXTS[lang]["custom"], lang),
+            )
+
+        row = conn.execute(
+            "SELECT value FROM localized_texts WHERE language=? AND key='admin_new_order'",
+            (lang,),
+        ).fetchone()
+        if row and any(term in row["value"] for term in legacy_pairs):
+            conn.execute(
+                "UPDATE localized_texts SET value=? WHERE language=? AND key='admin_new_order'",
+                (TRANSLATED_TEXTS[lang]["admin_new_order"], lang),
+            )
+
+        row = conn.execute(
+            "SELECT value FROM localized_texts WHERE language=? AND key='how'",
+            (lang,),
+        ).fetchone()
+        if row and any(term in row["value"] for term in legacy_pairs):
+            conn.execute(
+                "UPDATE localized_texts SET value=? WHERE language=? AND key='how'",
+                (TRANSLATED_TEXTS[lang]["how"], lang),
+            )
+
+    # Obsolete username screens are no longer part of the bot. Remove their
+    # localized/admin text entries from the persistent text stores.
+    conn.execute("DELETE FROM localized_texts WHERE key IN ('username','invalid_username')")
+    conn.execute("DELETE FROM texts WHERE key IN ('username','invalid_username')")
+
+    conn.commit()
+    conn.close()
 
 # ============================================================
 # CUSTOMER LANGUAGE-AWARE KEYBOARDS / SCREENS
@@ -7009,10 +7142,10 @@ async def show_settings(query):
 # Localize the top-level text/button editor labels.
 def p2p_text_names():
     labels = {
-        "en": {"welcome":"👋 Welcome","category":"🔄 What You Exchange","currency":"🎯 What You Exchange For","product":"📦 Exchange Options","custom":"✏️ Custom Amount","username":"👤 Roblox Username","how":"ℹ️ How It Works","confirmation":"✅ Order Confirmation","cancelled":"❌ Cancelled","no_categories":"🗂️ No Categories","no_products":"📦 No Products","invalid_amount":"⚠️ Invalid Amount","invalid_username":"⚠️ Invalid Username","order_error":"⚠️ Order Error","no_session":"ℹ️ No Session","p2p_market":"🤝 P2P Market","p2p_offer_amount":"💰 P2P Offer Amount","p2p_offer_target":"🎯 P2P What You Want","p2p_offer_target_amount":"💵 P2P Requested Amount","p2p_preview":"🔎 P2P Preview","p2p_published":"✅ P2P Published","p2p_empty":"🤝 P2P Empty Market","p2p_details":"📋 P2P Offer Details","p2p_buy_confirm":"🛒 P2P Buy Confirmation","p2p_bought":"✅ P2P Purchase Sent","p2p_seller_notice":"🔔 P2P Seller Notice","p2p_my_offers":"📋 P2P My Offers","p2p_cancelled":"✅ P2P Offer Cancelled"},
-        "ru": {"welcome":"👋 Приветствие","category":"🔄 Что вы обмениваете","currency":"🎯 На что обмениваете","product":"📦 Варианты обмена","custom":"✏️ Своё количество","username":"👤 Roblox Username","how":"ℹ️ Как это работает","confirmation":"✅ Подтверждение заказа","cancelled":"❌ Отмена","no_categories":"🗂️ Нет категорий","no_products":"📦 Нет товаров","invalid_amount":"⚠️ Неверное количество","invalid_username":"⚠️ Неверное имя Roblox","order_error":"⚠️ Ошибка заказа","no_session":"ℹ️ Нет сессии","p2p_market":"🤝 P2P Маркет","p2p_offer_amount":"💰 Количество P2P предложения","p2p_offer_target":"🎯 Что хотите получить","p2p_offer_target_amount":"💵 Запрашиваемое количество","p2p_preview":"🔎 Предпросмотр P2P","p2p_published":"✅ P2P опубликовано","p2p_empty":"🤝 P2P пустой маркет","p2p_details":"📋 Детали P2P предложения","p2p_buy_confirm":"🛒 Подтверждение P2P покупки","p2p_bought":"✅ P2P заказ отправлен","p2p_seller_notice":"🔔 Уведомление продавцу P2P","p2p_my_offers":"📋 Мои P2P предложения","p2p_cancelled":"✅ P2P отменено"},
-        "uk": {"welcome":"👋 Вітання","category":"🔄 Що ви обмінюєте","currency":"🎯 На що обмінюєте","product":"📦 Варіанти обміну","custom":"✏️ Власна кількість","username":"👤 Roblox Username","how":"ℹ️ Як це працює","confirmation":"✅ Підтвердження замовлення","cancelled":"❌ Скасовано","no_categories":"🗂️ Немає категорій","no_products":"📦 Немає товарів","invalid_amount":"⚠️ Неправильна кількість","invalid_username":"⚠️ Неправильне ім'я Roblox","order_error":"⚠️ Помилка замовлення","no_session":"ℹ️ Немає сесії","p2p_market":"🤝 P2P Маркет","p2p_offer_amount":"💰 Кількість P2P пропозиції","p2p_offer_target":"🎯 Що хочете отримати","p2p_offer_target_amount":"💵 Запитувана кількість","p2p_preview":"🔎 Перегляд P2P","p2p_published":"✅ P2P опубліковано","p2p_empty":"🤝 Порожній P2P маркет","p2p_details":"📋 Деталі P2P пропозиції","p2p_buy_confirm":"🛒 Підтвердження P2P купівлі","p2p_bought":"✅ P2P замовлення надіслано","p2p_seller_notice":"🔔 Сповіщення продавцю P2P","p2p_my_offers":"📋 Мої P2P пропозиції","p2p_cancelled":"✅ P2P скасовано"},
-        "kk": {"welcome":"👋 Сәлемдесу","category":"🔄 Нені айырбастайсыз","currency":"🎯 Неге айырбастайсыз","product":"📦 Айырбас нұсқалары","custom":"✏️ Жеке мөлшер","username":"👤 Roblox Username","how":"ℹ️ Қалай жұмыс істейді","confirmation":"✅ Тапсырысты растау","cancelled":"❌ Болдырылмады","no_categories":"🗂️ Санаттар жоқ","no_products":"📦 Өнімдер жоқ","invalid_amount":"⚠️ Дұрыс емес мөлшер","invalid_username":"⚠️ Roblox аты қате","order_error":"⚠️ Тапсырыс қатесі","no_session":"ℹ️ Сессия жоқ","p2p_market":"🤝 P2P Маркет","p2p_offer_amount":"💰 P2P ұсыныс мөлшері","p2p_offer_target":"🎯 Не алғыңыз келеді","p2p_offer_target_amount":"💵 Сұралған мөлшер","p2p_preview":"🔎 P2P алдын ала көру","p2p_published":"✅ P2P жарияланды","p2p_empty":"🤝 P2P бос маркет","p2p_details":"📋 P2P ұсыныс мәліметтері","p2p_buy_confirm":"🛒 P2P сатып алуды растау","p2p_bought":"✅ P2P тапсырысы жіберілді","p2p_seller_notice":"🔔 P2P сатушыға хабарлама","p2p_my_offers":"📋 Менің P2P ұсыныстарым","p2p_cancelled":"✅ P2P болдырылмады"},
+        "en": {"welcome":"👋 Welcome","category":"🔄 What You Exchange","currency":"🎯 What You Exchange For","product":"📦 Exchange Options","custom":"✏️ Custom Amount","account":"👤 Account Identifier","how":"ℹ️ How It Works","confirmation":"✅ Order Confirmation","cancelled":"❌ Cancelled","no_categories":"🗂️ No Categories","no_products":"📦 No Products","invalid_amount":"⚠️ Invalid Amount","invalid_input":"⚠️ Invalid input","order_error":"⚠️ Order Error","no_session":"ℹ️ No Session","p2p_market":"🤝 P2P Market","p2p_offer_amount":"💰 P2P Offer Amount","p2p_offer_target":"🎯 P2P What You Want","p2p_offer_target_amount":"💵 P2P Requested Amount","p2p_preview":"🔎 P2P Preview","p2p_published":"✅ P2P Published","p2p_empty":"🤝 P2P Empty Market","p2p_details":"📋 P2P Offer Details","p2p_buy_confirm":"🛒 P2P Buy Confirmation","p2p_bought":"✅ P2P Purchase Sent","p2p_seller_notice":"🔔 P2P Seller Notice","p2p_my_offers":"📋 P2P My Offers","p2p_cancelled":"✅ P2P Offer Cancelled"},
+        "ru": {"welcome":"👋 Приветствие","category":"🔄 Что вы обмениваете","currency":"🎯 На что обмениваете","product":"📦 Варианты обмена","custom":"✏️ Своё количество","account":"👤 Account Identifier","how":"ℹ️ Как это работает","confirmation":"✅ Подтверждение заказа","cancelled":"❌ Отмена","no_categories":"🗂️ Нет категорий","no_products":"📦 Нет товаров","invalid_amount":"⚠️ Неверное количество","invalid_input":"⚠️ Неверное значение","order_error":"⚠️ Ошибка заказа","no_session":"ℹ️ Нет сессии","p2p_market":"🤝 P2P Маркет","p2p_offer_amount":"💰 Количество P2P предложения","p2p_offer_target":"🎯 Что хотите получить","p2p_offer_target_amount":"💵 Запрашиваемое количество","p2p_preview":"🔎 Предпросмотр P2P","p2p_published":"✅ P2P опубликовано","p2p_empty":"🤝 P2P пустой маркет","p2p_details":"📋 Детали P2P предложения","p2p_buy_confirm":"🛒 Подтверждение P2P покупки","p2p_bought":"✅ P2P заказ отправлен","p2p_seller_notice":"🔔 Уведомление продавцу P2P","p2p_my_offers":"📋 Мои P2P предложения","p2p_cancelled":"✅ P2P отменено"},
+        "uk": {"welcome":"👋 Вітання","category":"🔄 Що ви обмінюєте","currency":"🎯 На що обмінюєте","product":"📦 Варіанти обміну","custom":"✏️ Власна кількість","account":"👤 Account Identifier","how":"ℹ️ Як це працює","confirmation":"✅ Підтвердження замовлення","cancelled":"❌ Скасовано","no_categories":"🗂️ Немає категорій","no_products":"📦 Немає товарів","invalid_amount":"⚠️ Неправильна кількість","invalid_input":"⚠️ Неправильне значення","order_error":"⚠️ Помилка замовлення","no_session":"ℹ️ Немає сесії","p2p_market":"🤝 P2P Маркет","p2p_offer_amount":"💰 Кількість P2P пропозиції","p2p_offer_target":"🎯 Що хочете отримати","p2p_offer_target_amount":"💵 Запитувана кількість","p2p_preview":"🔎 Перегляд P2P","p2p_published":"✅ P2P опубліковано","p2p_empty":"🤝 Порожній P2P маркет","p2p_details":"📋 Деталі P2P пропозиції","p2p_buy_confirm":"🛒 Підтвердження P2P купівлі","p2p_bought":"✅ P2P замовлення надіслано","p2p_seller_notice":"🔔 Сповіщення продавцю P2P","p2p_my_offers":"📋 Мої P2P пропозиції","p2p_cancelled":"✅ P2P скасовано"},
+        "kk": {"welcome":"👋 Сәлемдесу","category":"🔄 Нені айырбастайсыз","currency":"🎯 Неге айырбастайсыз","product":"📦 Айырбас нұсқалары","custom":"✏️ Жеке мөлшер","account":"👤 Account Identifier","how":"ℹ️ Қалай жұмыс істейді","confirmation":"✅ Тапсырысты растау","cancelled":"❌ Болдырылмады","no_categories":"🗂️ Санаттар жоқ","no_products":"📦 Өнімдер жоқ","invalid_amount":"⚠️ Дұрыс емес мөлшер","invalid_input":"⚠️ Қате мән","order_error":"⚠️ Тапсырыс қатесі","no_session":"ℹ️ Сессия жоқ","p2p_market":"🤝 P2P Маркет","p2p_offer_amount":"💰 P2P ұсыныс мөлшері","p2p_offer_target":"🎯 Не алғыңыз келеді","p2p_offer_target_amount":"💵 Сұралған мөлшер","p2p_preview":"🔎 P2P алдын ала көру","p2p_published":"✅ P2P жарияланды","p2p_empty":"🤝 P2P бос маркет","p2p_details":"📋 P2P ұсыныс мәліметтері","p2p_buy_confirm":"🛒 P2P сатып алуды растау","p2p_bought":"✅ P2P тапсырысы жіберілді","p2p_seller_notice":"🔔 P2P сатушыға хабарлама","p2p_my_offers":"📋 Менің P2P ұсыныстарым","p2p_cancelled":"✅ P2P болдырылмады"},
     }
     return labels[current_language()]
 
@@ -7045,7 +7178,7 @@ PROMPTS = {
         "category_button":"🔘 <b>КНОПКА КАТЕГОРИИ</b>\n\nОтправьте новый текст кнопки.",
         "category_desc":"📝 <b>ОПИСАНИЕ КАТЕГОРИИ</b>\n\nОтправьте описание или <code>-</code>.",
         "add_product_name":"➕ <b>ДОБАВИТЬ ТОВАР</b>\n\nОтправьте название товара.",
-        "change_product_amount":"🔢 <b>КОЛИЧЕСТВО</b>\n\nОтправьте новое количество Robux.\nПример: <code>2000</code>",
+        "change_product_amount":"🔢 <b>КОЛИЧЕСТВО</b>\n\nОтправьте новое количество.\nПример: <code>2000</code>",
         "product_button":"🔘 <b>КНОПКА ТОВАРА</b>\n\nОтправьте новый текст кнопки.",
         "product_desc":"📝 <b>ОПИСАНИЕ ТОВАРА</b>\n\nОтправьте описание или <code>-</code>.",
         "add_currency_name":"➕ <b>ДОБАВИТЬ ЦЕЛЬ ОБМЕНА</b>\n\nОтправьте название.",
@@ -7072,7 +7205,7 @@ PROMPTS = {
         "category_button":"🔘 <b>КНОПКА КАТЕГОРІЇ</b>\n\nНадішліть новий текст кнопки.",
         "category_desc":"📝 <b>ОПИС КАТЕГОРІЇ</b>\n\nНадішліть опис або <code>-</code>.",
         "add_product_name":"➕ <b>ДОДАТИ ТОВАР</b>\n\nНадішліть назву товару.",
-        "change_product_amount":"🔢 <b>КІЛЬКІСТЬ</b>\n\nНадішліть нову кількість Robux.\nПриклад: <code>2000</code>",
+        "change_product_amount":"🔢 <b>КІЛЬКІСТЬ</b>\n\nНадішліть нову кількість.\nПриклад: <code>2000</code>",
         "product_button":"🔘 <b>КНОПКА ТОВАРУ</b>\n\nНадішліть новий текст кнопки.",
         "product_desc":"📝 <b>ОПИС ТОВАРУ</b>\n\nНадішліть опис або <code>-</code>.",
         "add_currency_name":"➕ <b>ДОДАТИ ЦІЛЬ ОБМІНУ</b>\n\nНадішліть назву.",
@@ -7099,7 +7232,7 @@ PROMPTS = {
         "category_button":"🔘 <b>САНАТ БАТЫРМАСЫ</b>\n\nЖаңа батырма мәтінін жіберіңіз.",
         "category_desc":"📝 <b>САНАТ СИПАТТАМАСЫ</b>\n\nСипаттаманы немесе <code>-</code> жіберіңіз.",
         "add_product_name":"➕ <b>ӨНІМ ҚОСУ</b>\n\nӨнім атауын жіберіңіз.",
-        "change_product_amount":"🔢 <b>МӨЛШЕР</b>\n\nЖаңа Robux мөлшерін жіберіңіз.\nМысал: <code>2000</code>",
+        "change_product_amount":"🔢 <b>МӨЛШЕР</b>\n\nЖаңа мөлшерді жіберіңіз.\nМысал: <code>2000</code>",
         "product_button":"🔘 <b>ӨНІМ БАТЫРМАСЫ</b>\n\nЖаңа батырма мәтінін жіберіңіз.",
         "product_desc":"📝 <b>ӨНІМ СИПАТТАМАСЫ</b>\n\nСипаттаманы немесе <code>-</code> жіберіңіз.",
         "add_currency_name":"➕ <b>АЙЫРБАС МАҚСАТЫН ҚОСУ</b>\n\nАтауын жіберіңіз.",
@@ -7405,6 +7538,70 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             set_user_language(user_id, lang)
 
     await _CALLBACK_BEFORE_USER_LANGUAGE(update, context)
+
+# Final database overlay: add the generic order amount field after all prior
+# language/database wrappers have finished, so this is the init_db used by run().
+_FINAL_INIT_BEFORE_GENERIC = init_db
+
+def init_db():
+    _FINAL_INIT_BEFORE_GENERIC()
+    conn = db()
+    ensure_column(conn, "orders", "amount", "TEXT NOT NULL DEFAULT '0'")
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(orders)").fetchall()}
+    if "robux_amount" in columns:
+        conn.execute(
+            "UPDATE orders SET amount = CAST(robux_amount AS TEXT) "
+            "WHERE amount IS NULL OR amount = '' OR amount = '0'"
+        )
+    legacy_pairs = ("Robux", "Roblox", "ROBLOX")
+    # The latest built-in language packs are generic. Older DB text is updated
+    # only when it still contains the obsolete platform-specific terms.
+    for lang in SUPPORTED_LANGUAGES:
+        for key in ("custom", "admin_new_order", "how"):
+            row = conn.execute(
+                "SELECT value FROM localized_texts WHERE language=? AND key=?",
+                (lang, key),
+            ).fetchone()
+            if row:
+                obsolete_template = (
+                    any(term in row["value"] for term in legacy_pairs)
+                    or "{roblox_username}" in row["value"]
+                    or "Payment method" in row["value"]
+                    or "Платёж" in row["value"]
+                    or "Платіж" in row["value"]
+                    or "Төлем" in row["value"]
+                )
+                if obsolete_template:
+                    conn.execute(
+                        "UPDATE localized_texts SET value=? WHERE language=? AND key=?",
+                        (TRANSLATED_TEXTS[lang][key], lang, key),
+                    )
+    conn.execute("DELETE FROM localized_texts WHERE key IN ('username','invalid_username')")
+    conn.execute("DELETE FROM texts WHERE key IN ('username','invalid_username')")
+
+    # Migrate the untouched old Robux seed so an existing default database also
+    # starts from generic exchange terminology. User-created/custom names are
+    # not changed.
+    migrated = conn.execute(
+        "SELECT value FROM settings WHERE key='generic_exchange_seed_migrated'"
+    ).fetchone()
+    if not migrated:
+        conn.execute(
+            "UPDATE categories SET name='Digital Currency', button_text='💱 Digital Currency', "
+            "description='Choose the currency or asset you want to exchange.' "
+            "WHERE name='Robux' AND button_text='💎 Robux' AND description='Choose a Robux amount to exchange.'"
+        )
+        conn.execute(
+            "UPDATE products SET name=REPLACE(name,' Robux',' Units'), "
+            "button_text=REPLACE(button_text,' Robux',' Units') "
+            "WHERE name IN ('200 Robux','500 Robux','700 Robux','1,000 Robux')"
+        )
+        conn.execute(
+            "INSERT INTO settings(key,value) VALUES('generic_exchange_seed_migrated','1')"
+        )
+
+    conn.commit()
+    conn.close()
 
 # Keep runtime entrypoint after the final overlays.
 
